@@ -1,6 +1,15 @@
+#
+# Filename: reader.py
+# Author: Tianshu Li
+# Date: Oct.22 2021
+#
+
+
 import os
+import re
 import git
 import glob
+import argparse
 import pandas as pd
 
 from io import StringIO
@@ -48,19 +57,17 @@ class GitReader():
     # Given a full path/to/file/filename, parse the basename and langauge
     # The basename is a name of the file content that remains unchanged among languages
     def parse_base_lang(self, file_name):
-        print("parsing: =========")
+        base_name, lang = None, None
         if self.pattern == "folder/":
             for split in file_name.split("/"):
                 if split in self.all_langs:
                     lang = split
                     base_name = os.path.basename(file_name)
-
-                    print(lang, base_name)
                     break
         elif self.pattern == ".lang":
             lang = file_name.split(".")[-2]
             assert lang in self.all_langs, "Invalid format of translation files"
-            base_name = file_name.replace("."+lang, "")        
+            base_name = file_name.replace("."+lang, "") 
         return base_name, lang
     
     # Parse the processed commit into 
@@ -81,14 +88,22 @@ class GitReader():
         for i in commits.index:
             file_name = commits.loc[i, "filename"]
 
+            # Clean out the { *** => ***} format in file name
+            path_hack = re.search(r'\{.+\}', file_name)
+            if path_hack:
+                path_hack = path_hack.group()
+                file_name = file_name.replace(path_hack, path_hack[1:-1].split("=>")[-1].strip())
+
             # Filter out files that have been deleted from the current repo, 
             # and are not in the specified content path
             if (
-                file_name in repo_set and
+                file_name in repo_set and 
                 file_name.startswith(self.prefix) and 
                 file_name.split(".")[-1] in self.file_types
             ):
                 base_name, lang = self.parse_base_lang(file_name)
+                if not base_name:
+                    continue
                 commit_time = float(commits.loc[i, "timestamp"])
 
                 if (base_name not in file_dict):
@@ -130,7 +145,46 @@ class GitReader():
             for file in commits[base_file]:
                 if commits[base_file][file]["ft"] < st:
                     origins[base_file] = file
-                    st = commits[base_file][file]["lt"]
+                    st = commits[base_file][file]["ft"]
         return origins
 
 
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser()
+    parser.add_argument(
+        '--branch', type=str, default="main", 
+        help='Please specify the name of branch to fetch the .git history'
+    )
+    parser.add_argument(
+        '--repo_path', type=str, default=os.getcwd(),
+        help='Please specify the path to the repository'
+    )
+    parser.add_argument(
+        '--content_path', type=str, default='content/', 
+        help='Please specify the path from the root of repository to the content to be translated'
+    )
+    parser.add_argument(
+        '--file_ext', type=str, default='md', 
+        help='Please specify the file extention of the translation files'
+    )
+    parser.add_argument(
+        '--pattern', type=str, choices=["folder/", ".lang"], required=True,
+        help='Please specify the pattern of how the translation files are organized'
+    )
+    parser.add_argument(
+        '--langs', type=str, required=False,
+        help='Target languages to monitor for translation, e.g. "en zh ja" '
+    )
+
+    config = parser.parse_args()
+    reader = GitReader(
+        repo_path=config.repo_path, 
+        content_path=config.content_path, 
+        branch=config.branch, 
+        file_ext=config.file_ext, 
+        pattern=config.pattern,
+    )
+
+    commits = reader.parse_commits()
+    origins = reader.get_origins(commits)
+    langs = reader.get_langs(commits)

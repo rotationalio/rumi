@@ -1,3 +1,10 @@
+#
+# Filename: reporter.py
+# Author: Tianshu Li
+# Date: Oct.22 2021
+#
+
+
 import os
 import argparse
 
@@ -9,7 +16,7 @@ class StatusReporter():
     def __init__(self, repo_path="./", src_lang="", tgt_lang=""):
         self.repo_path = repo_path
         self.src_lang = src_lang
-        self.tgt_lang = set(tgt_lang.split(" "))
+        self.tgt_lang = tgt_lang
 
     # Count number of origin files in each language
     def get_num_origin(self, commits, origins, langs):
@@ -36,7 +43,7 @@ class StatusReporter():
                         remain -= 1
                     else:
                         update[files[file]["lang"]] = 1
-            if complete == 0:
+            if remain == 1:
                 complete[files[origin]["lang"]] += 1
             else:
                 open[files[origin]["lang"]] += 1
@@ -70,17 +77,14 @@ class StatusReporter():
             origin = origins[base_file]
             files = commits[base_file]
             src_lang = files[origin]["lang"]
-
-            print(origin, src_lang)
-
+            
             update_target_lang = []
             for file in files:
-                print(file)
                 if file != origin:
                     target_lang = files[file]["lang"]
                     if files[file]["lt"] < files[origin]["lt"]:
                         update_target_lang.append(target_lang)
-                        print(self.src_lang, self.tgt_lang)
+                        
                         if (self.src_lang=="" or self.src_lang==src_lang) and (self.tgt_lang=="" or self.tgt_lang == target_lang):
                             data.append([origin, "Update", src_lang, target_lang, "?"])
             
@@ -89,7 +93,6 @@ class StatusReporter():
                 if (self.src_lang=="" or self.src_lang== src_lang) and (self.tgt_lang=="" or self.tgt_lang == target_lang):
                     data.append([origin, "Open", src_lang, target_lang, self.word_count(file)])
 
-        print(data)
         print(tabulate(
             data, 
             headers=["File", "Status", "Source Language", "Target Language", "Word Count"],
@@ -143,8 +146,6 @@ if __name__ == "__main__":
     )
 
     commits = reader.parse_commits()
-    for k in commits:
-        print(k, commits[k])
     origins = reader.get_origins(commits)
     langs = reader.get_langs(commits)
 
