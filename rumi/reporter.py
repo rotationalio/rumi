@@ -12,6 +12,7 @@ Translation status reporter based on commit history from git
 # Imports
 ##########################################################################
 
+
 import os
 import argparse
 
@@ -44,6 +45,7 @@ class StatusReporter():
         | filename1        | Update   | en                | zh                | ?            |
         | filename2        | Open     | en                | fr                | 404          |
         | filename2        | Open     | en                | zh                | 404          |
+    
     Parameters
     ----------
     repo_path: string, default: "./"
@@ -92,6 +94,7 @@ class StatusReporter():
             }
         langs: set
             Set of all language codes contained and monitored in the repository.
+        
         Returns
         -------
         cnt: dictionary
@@ -176,6 +179,7 @@ class StatusReporter():
         ----------
         file: string
             Name of the file.
+        
         Returns
         -------
         wc: int
@@ -257,7 +261,7 @@ if __name__ == "__main__":
         help='Please specify the pattern of how the translation files are organized'
     )
     parser.add_argument(
-        '--langs', type=str, required=False,
+        '--langs', type=str, required=False, default="",
         help='Target languages to monitor for translation, e.g. "en zh ja" '
     )
 

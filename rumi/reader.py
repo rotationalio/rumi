@@ -12,6 +12,7 @@ Git history reader for monitoring translation status
 # Imports
 ##########################################################################
 
+
 import os
 import re
 import git
@@ -51,6 +52,7 @@ class GitReader():
     """
     GitReader reads the github history, parses it into a commit dictionary, 
     and also parses the source files and source and target languages. 
+
     Parameters
     ----------
     repo_path: string, default: "./"
@@ -73,6 +75,7 @@ class GitReader():
         Language codes joint by a white space as specified by the user. If not 
         specified, GitReader will try to get languages from the filenames in the 
         current repository for monitoring.
+
     Attributes
     ----------
     file_types: list
@@ -125,10 +128,12 @@ class GitReader():
         Given a full path/to/file/filename, parse the basename and langauge with
         consideration of the two types of repository organization patterns: "folder/"
         and ".lang". 
+
         Parameters
         ----------
         file_name: string
             Name of the file.
+
         Returns
         -------
         basename: string
@@ -163,6 +168,7 @@ class GitReader():
                 }
             }
         }
+
         Returns
         -------
         file_dict: dictionary
@@ -227,6 +233,7 @@ class GitReader():
         by providing a string e.g. "en fr zh de". If the target langauges 
         are not provided, the get_langs function will get langauges based 
         on the file names and the ALL_LANGS set.
+
         Returns
         -------
         langs: set
@@ -292,7 +299,7 @@ if __name__ == "__main__":
         help='Please specify the pattern of how the translation files are organized'
     )
     parser.add_argument(
-        '--langs', type=str, required=False,
+        '--langs', type=str, required=False, default="",
         help='Target languages to monitor for translation, e.g. "en zh ja" '
     )
 
