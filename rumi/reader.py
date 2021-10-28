@@ -158,17 +158,8 @@ class GitReader():
 
     def parse_commits(self):
         """
-        Parse the processed commits into 
-            {
-            "basename": {
-                "filename": {
-                    "lang": language of this file,
-                    "ft": timestamp of the first commit,
-                    "lt": timestamp of the last commit,
-                }
-            }
-        }
-
+        Parse the processed commits.
+        
         Returns
         -------
         file_dict: dictionary
