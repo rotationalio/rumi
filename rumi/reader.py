@@ -159,7 +159,7 @@ class GitReader():
     def parse_commits(self):
         """
         Parse the processed commits.
-        
+
         Returns
         -------
         file_dict: dictionary
@@ -168,8 +168,11 @@ class GitReader():
                 "basename": {
                     "filename": {
                         "lang": "language of this file",
-                        "ft": "timestamp of the first commit",
-                        "lt": "timestamp of the last commit",
+                        "ft": timestamp of the first commit,
+                        "lt": timestamp of the last commit,
+                        "history": {
+                            timestamp: [#additions, #deletions]
+                        }
                     }
                 }
             }
@@ -181,6 +184,10 @@ class GitReader():
         file_dict = {}
         for i in commits.index:
             file_name = commits.loc[i, "filename"]
+            add = commits.loc[i, "additions"]
+            add = 0 if add == "-" else int(add)
+            delete = commits.loc[i, "deletions"]
+            delete = 0 if delete == "-" else int(delete)
 
             # Clean out the { *** => ***} format in file name
             path_hack = re.search(r'\{.+\}', file_name)
@@ -208,11 +215,16 @@ class GitReader():
                         file_dict[base_name][file_name]["ft"] = commit_time
                     elif commit_time > file_dict[base_name][file_name]["lt"]:
                         file_dict[base_name][file_name]["lt"] = commit_time
+
+                    file_dict[base_name][file_name]["history"][commit_time] = [add, delete]
                 else:
                     file_dict[base_name][file_name] = {
                         "lang": lang,
                         "ft": commit_time,
-                        "lt": commit_time
+                        "lt": commit_time,
+                        "history": {
+                            commit_time: [add, delete]
+                        }
                     }
 
         return file_dict

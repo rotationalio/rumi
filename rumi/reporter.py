@@ -191,17 +191,35 @@ class StatusReporter():
                 wc += len(line.split(" "))
         return wc
 
+    def count_lines(self, file):
+        with open(self.repo_path+file, "r+") as f:
+            cnt = len(f.readlines())
+        return cnt
+
+    def count_add_del(self, history, timestamp):
+        cnt = 0
+        for ts in history:
+            if ts > timestamp:
+                cnt += sum(history[ts])
+        return cnt
+
     def detail(self, commits, origins, langs):
         """
         Print out the details of the work required for translating each source
         file, its Open/Update status, source and target language, and the count
         of words in the source file.
         """
+        for k in commits:
+            print(k)
+            for y in commits[k]:
+                print(y, commits[k][y])
         data = []
         for base_file in commits:
             origin = origins[base_file]
             files = commits[base_file]
             src_lang = files[origin]["lang"]
+
+            total_lines = self.count_lines(origin)
 
             # Track target languages that are complete or need update
             update_tgt_lang, complete_tgt_lang = [], []
@@ -210,11 +228,16 @@ class StatusReporter():
                     target_lang = files[file]["lang"]
                     if files[file]["lt"] < files[origin]["lt"]:
                         update_tgt_lang.append(target_lang)
+                        # Count all additions and deletions in the origin file 
+                        # after current file's last update timestamp
+                        update_lines = self.count_add_del(files[origin]["history"], files[file]["lt"])
+                        pct = str(round(update_lines/total_lines, 3) * 100)+"%"
+                        print(update_lines, total_lines)
                         if (
                             (self.src_lang=="" or self.src_lang==src_lang) and 
                             (self.tgt_lang=="" or self.tgt_lang==target_lang)
                         ):
-                            data.append([origin, "Update", src_lang, target_lang, "?"])
+                            data.append([origin, "Update", src_lang, target_lang, "?", pct])
                     else:
                         complete_tgt_lang.append(target_lang)
 
@@ -228,12 +251,12 @@ class StatusReporter():
                     (self.src_lang=="" or self.src_lang==src_lang) and 
                     (self.tgt_lang=="" or self.tgt_lang==target_lang)
                 ):
-                    data.append([origin, "Open", src_lang, target_lang, self.word_count(file)])
+                    data.append([origin, "Open", src_lang, target_lang, self.word_count(file), "100%"])
 
         # Print detail data in tabulate format
         print(tabulate(
             data, 
-            headers=["File", "Status", "Source Language", "Target Language", "Word Count"],
+            headers=["File", "Status", "Source Language", "Target Language", "Word Count", "Percent Change"],
             tablefmt='orgtbl'
         ))
 
