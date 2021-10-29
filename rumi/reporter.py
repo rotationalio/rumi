@@ -81,6 +81,9 @@ class StatusReporter():
                         "lang": "language of this file",
                         "ft": "timestamp of the first commit",
                         "lt": "timestamp of the last commit",
+                        "history": {
+                            timestamp (float): [#additions, #deletions]
+                        }
                     }
                 }
             }
@@ -192,15 +195,48 @@ class StatusReporter():
         return wc
 
     def count_lines(self, file):
+        """
+        Count the total number of lines of a given file.
+
+        Parameters
+        ----------
+        file: string
+            Name of the file.
+        
+        Returns
+        -------
+        cnt: int
+            Number of lines
+        """
         with open(self.repo_path+file, "r+") as f:
             cnt = len(f.readlines())
         return cnt
 
-    def count_add_del(self, history, timestamp):
+    def count_additions(self, history, timestamp):
+        """
+        Count the number of additions maintained by git history
+        after a provided timestamp.
+
+        Parameters
+        ----------
+        history: dictionary
+            Git history of a file parsed by GitReader: 
+            {
+                timestamp: [#additions, #deletions]
+            }
+
+        timestamp: float
+            Provided timestamp in time.time() format.
+        
+        Returns
+        -------
+        cnt: int
+            Total number of additions after timestamp.
+        """
         cnt = 0
         for ts in history:
             if ts > timestamp:
-                cnt += sum(history[ts])
+                cnt += history[ts][0]
         return cnt
 
     def detail(self, commits, origins, langs):
@@ -209,10 +245,6 @@ class StatusReporter():
         file, its Open/Update status, source and target language, and the count
         of words in the source file.
         """
-        for k in commits:
-            print(k)
-            for y in commits[k]:
-                print(y, commits[k][y])
         data = []
         for base_file in commits:
             origin = origins[base_file]
@@ -228,11 +260,11 @@ class StatusReporter():
                     target_lang = files[file]["lang"]
                     if files[file]["lt"] < files[origin]["lt"]:
                         update_tgt_lang.append(target_lang)
-                        # Count all additions and deletions in the origin file 
-                        # after current file's last update timestamp
-                        update_lines = self.count_add_del(files[origin]["history"], files[file]["lt"])
+
+                        # Count all additions in the origin file after current file's last update timestamp
+                        update_lines = self.count_additions(files[origin]["history"], files[file]["lt"])
                         pct = str(round(update_lines/total_lines, 3) * 100)+"%"
-                        print(update_lines, total_lines)
+                        
                         if (
                             (self.src_lang=="" or self.src_lang==src_lang) and 
                             (self.tgt_lang=="" or self.tgt_lang==target_lang)

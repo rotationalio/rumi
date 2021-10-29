@@ -87,7 +87,7 @@ class GitReader():
         self, repo_path="./", branch="main", langs="",
         content_path="content/", file_ext="md", pattern="folder/"
     ):
-        self.repo_path = repo_path
+        self.validate_repo(repo_path)
         self.branch = branch
         self.langs = langs
         self.content_path = content_path
@@ -96,23 +96,25 @@ class GitReader():
         self.file_types = file_ext.split(" ")
         self.all_langs = ALL_LANGS
 
-    def validate_repo(self):
+    def validate_repo(self, repo_path):
         """
         Check if the user-provided repo_path is a valid directory, if not, check
         if it is the folder name of the repository. Otherwise, message user to
         provide a valid repo_path.
 
-        Return:
-        -------
-        self.repo_path: string if valid, else: return None.
+        Parameters
+        ----------
+        repo_path: string, default: "./"
+            Path to the repository to monitory the translation status. Default
+            uses the current path. 
         """
-        if os.path.isdir(self.repo_path):
-            return self.repo_path
-        elif os.path.isdir(self.repo_path+"/"):
-            return self.repo_path+"/"
+        if os.path.isdir(repo_path):
+            self.repo_path = repo_path
+        elif os.path.isdir(repo_path+"/"):
+            self.repo_path = repo_path+"/"
         else:
             print("Please specify a valid repository path")
-            return 
+            self.repo_path = None 
 
     def read_history(self):
         """
@@ -186,10 +188,10 @@ class GitReader():
                 "basename": {
                     "filename": {
                         "lang": "language of this file",
-                        "ft": timestamp of the first commit,
-                        "lt": timestamp of the last commit,
+                        "ft": timestamp of the first commit (float),
+                        "lt": timestamp of the last commit (float),
                         "history": {
-                            timestamp: [#additions, #deletions]
+                            timestamp (float): [#additions, #deletions]
                         }
                     }
                 }
