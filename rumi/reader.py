@@ -96,6 +96,24 @@ class GitReader():
         self.file_types = file_ext.split(" ")
         self.all_langs = ALL_LANGS
 
+    def validate_repo(self):
+        """
+        Check if the user-provided repo_path is a valid directory, if not, check
+        if it is the folder name of the repository. Otherwise, message user to
+        provide a valid repo_path.
+
+        Return:
+        -------
+        self.repo_path: string if valid, else: return None.
+        """
+        if os.path.isdir(self.repo_path):
+            return self.repo_path
+        elif os.path.isdir(self.repo_path+"/"):
+            return self.repo_path+"/"
+        else:
+            print("Please specify a valid repository path")
+            return 
+
     def read_history(self):
         """
         Read the git history at the specified branch and preprocess the histories.
