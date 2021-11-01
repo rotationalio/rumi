@@ -13,5 +13,5 @@ jobs:
         uses: ./
         # pass user input as arguments
         with:
-          repo_path: "../rotational.io/"
+          repo_path: "/rotational.io/"
           pattern: "/folder"
