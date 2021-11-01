@@ -96,7 +96,7 @@ class GitReader():
         self.file_types = file_ext.split(" ")
         self.all_langs = ALL_LANGS
 
-    def validate_repo(self):
+    def validate_repo(self, repo_path):
         """
         Check if the user-provided repo_path is a valid directory, if not, check
         if it is the folder name of the repository. Otherwise, message user to
