@@ -7,6 +7,9 @@ inputs:
   repo_path:
     required: false
     description: Path to the repository
+  pattern:
+    required: true
+    description: the pattern of how the translation files are organized (folder/ or .lang)
 
 runs:
   using: docker 
