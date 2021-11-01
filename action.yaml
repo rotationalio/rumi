@@ -1,0 +1,17 @@
+
+name: rumi
+
+description: This action monitors translation of static sites
+
+inputs:
+  repo_path:
+    required: false
+    description: Path to the repository
+
+runs:
+  using: docker 
+  image: 'Dockerfile'
+
+branding: 
+  icon: arrow-down 
+  color: blue 
