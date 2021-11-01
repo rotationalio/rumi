@@ -13,5 +13,5 @@ jobs:
         uses: ./
         # pass user input as arguments
         with:
-          repo_path: "rumi/"
+          repo_path: "."
           pattern: "/folder"
