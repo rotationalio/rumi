@@ -3,13 +3,12 @@ import os
 from reader import GitReader
 from reporter import StatusReporter
 
-repo_path = os.environ['INPUT_REPO_PATH']
 pattern = os.environ['INPUT_PATTERN']
 
 reader = GitReader(
     repo_name="rotational.io",
     repo_url="https://github.com/rotationalio/rotational.io.git",
-    pattern=pattern,)
+    pattern=pattern)
 commits = reader.parse_commits()
 origins = reader.get_origins(commits)
 langs = reader.get_langs(commits)

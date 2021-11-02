@@ -13,4 +13,4 @@ jobs:
         uses: ./
         # pass user input as arguments
         with:
-          pattern: "/folder"
+          pattern: "folder/"
