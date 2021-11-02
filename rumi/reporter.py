@@ -81,6 +81,9 @@ class StatusReporter():
                         "lang": "language of this file",
                         "ft": "timestamp of the first commit",
                         "lt": "timestamp of the last commit",
+                        "history": {
+                            timestamp (float): [#additions, #deletions]
+                        }
                     }
                 }
             }
@@ -191,6 +194,51 @@ class StatusReporter():
                 wc += len(line.split(" "))
         return wc
 
+    def count_lines(self, file):
+        """
+        Count the total number of lines of a given file.
+
+        Parameters
+        ----------
+        file: string
+            Name of the file.
+        
+        Returns
+        -------
+        cnt: int
+            Number of lines
+        """
+        with open(self.repo_path+file, "r+") as f:
+            cnt = len(f.readlines())
+        return cnt
+
+    def count_additions(self, history, timestamp):
+        """
+        Count the number of additions maintained by git history
+        after a provided timestamp.
+
+        Parameters
+        ----------
+        history: dictionary
+            Git history of a file parsed by GitReader: 
+            {
+                timestamp: [#additions, #deletions]
+            }
+
+        timestamp: float
+            Provided timestamp in time.time() format.
+        
+        Returns
+        -------
+        cnt: int
+            Total number of additions after timestamp.
+        """
+        cnt = 0
+        for ts in history:
+            if ts > timestamp:
+                cnt += history[ts][0]
+        return cnt
+
     def detail(self, commits, origins, langs):
         """
         Print out the details of the work required for translating each source
@@ -203,6 +251,8 @@ class StatusReporter():
             files = commits[base_file]
             src_lang = files[origin]["lang"]
 
+            total_lines = self.count_lines(origin)
+
             # Track target languages that are complete or need update
             update_tgt_lang, complete_tgt_lang = [], []
             for file in files:
@@ -210,11 +260,16 @@ class StatusReporter():
                     target_lang = files[file]["lang"]
                     if files[file]["lt"] < files[origin]["lt"]:
                         update_tgt_lang.append(target_lang)
+
+                        # Count all additions in the origin file after current file's last update timestamp
+                        update_lines = self.count_additions(files[origin]["history"], files[file]["lt"])
+                        pct = str(round(update_lines/total_lines, 3) * 100)+"%"
+                        
                         if (
                             (self.src_lang=="" or self.src_lang==src_lang) and 
                             (self.tgt_lang=="" or self.tgt_lang==target_lang)
                         ):
-                            data.append([origin, "Update", src_lang, target_lang, "?"])
+                            data.append([origin, "Update", src_lang, target_lang, "?", pct])
                     else:
                         complete_tgt_lang.append(target_lang)
 
@@ -228,12 +283,12 @@ class StatusReporter():
                     (self.src_lang=="" or self.src_lang==src_lang) and 
                     (self.tgt_lang=="" or self.tgt_lang==target_lang)
                 ):
-                    data.append([origin, "Open", src_lang, target_lang, self.word_count(file)])
+                    data.append([origin, "Open", src_lang, target_lang, self.word_count(file), "100%"])
 
         # Print detail data in tabulate format
         print(tabulate(
             data, 
-            headers=["File", "Status", "Source Language", "Target Language", "Word Count"],
+            headers=["File", "Status", "Source Language", "Target Language", "Word Count", "Percent Change"],
             tablefmt='orgtbl'
         ))
 
