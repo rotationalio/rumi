@@ -331,20 +331,21 @@ if __name__ == "__main__":
 
     config = parser.parse_args()
     reader = GitReader(
-        repo_path=config.repo_path, 
+        repo_name="rotational.io",
+        repo_url="https://github.com/rotationalio/rotational.io.git",
         content_path=config.content_path, 
         branch=config.branch, 
         file_ext=config.file_ext, 
         pattern=config.pattern,
         langs=config.langs
     )
-
+    
     commits = reader.parse_commits()
     origins = reader.get_origins(commits)
     langs = reader.get_langs(commits)
 
     reporter = StatusReporter(
-        repo_path=config.repo_path, 
+        repo_path="rotational.io/", 
         src_lang=config.detail_src_lang, 
         tgt_lang=config.detail_tgt_lang
     )

@@ -18,6 +18,7 @@ import re
 import git
 import glob
 import string
+import shutil
 import argparse
 import pandas as pd
 
@@ -84,10 +85,13 @@ class GitReader():
         Set of all language codes.
     """
     def __init__(
-        self, repo_path="./", branch="main", langs="",
+        self, repo_url="", repo_name="", branch="main", langs="",
         content_path="content/", file_ext="md", pattern="folder/"
     ):
-        self.validate_repo(repo_path)
+        self.repo_url = repo_url
+        self.repo_name = repo_name
+        self.repo_path = repo_name+"/"
+        # self.validate_repo(repo_path)
         self.branch = branch
         self.langs = langs
         self.content_path = content_path
@@ -124,7 +128,9 @@ class GitReader():
         -------
         commits: pandas DataFrame
         """
-        repo = git.Repo(self.repo_path)
+        if os.path.isdir(self.repo_path):
+            shutil.rmtree(self.repo_path)
+        repo = git.Repo.clone_from(self.repo_url, self.repo_name)
         repo.git.checkout(self.branch)
         print("Branch switched to {}".format(self.branch))
 
@@ -328,7 +334,8 @@ if __name__ == "__main__":
 
     config = parser.parse_args()
     reader = GitReader(
-        repo_path=config.repo_path, 
+        repo_name="rotational.io",
+        repo_url="https://github.com/rotationalio/rotational.io.git",
         content_path=config.content_path, 
         branch=config.branch, 
         file_ext=config.file_ext, 
