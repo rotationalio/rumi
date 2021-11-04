@@ -14,6 +14,7 @@ Integration of rumi with github action
 
 
 import os
+import shutil
 
 from reader import GitReader
 from reporter import StatusReporter
@@ -27,6 +28,16 @@ pattern = os.environ['INPUT_PATTERN']
 langs = os.environ["INPUT_LANGS"]
 detail_src_lang = os.environ["INPUT_DETAIL_SRC_LANG"]
 detail_tgt_lang = os.environ["INPUT_DETAIL_TGT_LANG"]
+
+
+##########################################################################
+# Helper Method
+##########################################################################
+
+
+def clean_repo(repo_path):
+    if os.path.isdir(repo_path):
+        shutil.rmtree(repo_path)
 
 
 ##########################################################################
@@ -50,3 +61,5 @@ reporter = StatusReporter(reader.repo_path)
 
 reporter.stats(commits, origins, langs)
 reporter.detail(commits, origins, langs)
+
+clean_repo(reader.repo_path)

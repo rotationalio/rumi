@@ -295,17 +295,22 @@ class StatusReporter():
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument(
-        '--branch', type=str, default="main", 
-        help='Please specify the name of branch to fetch the .git history'
-    )
-    parser.add_argument(
+    group = parser.add_mutually_exclusive_group(required=True)
+    group.add_argument(
         '--repo_url', type=str, default="", 
         help='Please specify the url of the repository for translation monitoring'
+    )
+    group.add_argument(
+        '--repo_path', type=str, default="",
+        help='Please specify the path to the repository'
     )
     parser.add_argument(
         '--content_path', type=str, default='content/', 
         help='Please specify the path from the root of repository to the content to be translated'
+    )
+    parser.add_argument(
+        '--branch', type=str, default="main", 
+        help='Please specify the name of branch to fetch the .git history'
     )
     parser.add_argument(
         '--file_ext', type=str, default='md', 
@@ -332,6 +337,7 @@ if __name__ == "__main__":
     config = parser.parse_args()
     reader = GitReader(
         repo_url=config.repo_url,
+        repo_path=config.repo_path,
         content_path=config.content_path, 
         branch=config.branch, 
         file_ext=config.file_ext, 
