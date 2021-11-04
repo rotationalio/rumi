@@ -113,9 +113,10 @@ class GitReader():
             uses the current path. 
         """
         if os.path.isdir(repo_path):
-            self.repo_path = repo_path
-        elif os.path.isdir(repo_path+"/"):
-            self.repo_path = repo_path+"/"
+            if repo_path[-1] != "/":
+                self.repo_path = repo_path+"/"
+            else:
+                self.repo_path = repo_path
         else:
             print("Please specify a valid repository path")
             self.repo_path = None 
@@ -136,12 +137,12 @@ class GitReader():
             repo = git.Repo.clone_from(self.repo_url, self.repo_name)
         else:
             repo = git.Repo(self.repo_path)
+            print("Using locale repository {}".format(self.repo_path))
         repo.git.checkout(self.branch)
         print("Branch switched to {}".format(self.branch))
 
-        git_bin = repo.git
         command = 'git log --numstat --pretty=format:"\t\t\t%h\t%at\t%aN"'
-        git_log = git_bin.execute(command=command, shell=True)
+        git_log = repo.git.execute(command=command, shell=True)
 
         commits_raw = pd.read_csv(
             StringIO(git_log), 
@@ -211,7 +212,8 @@ class GitReader():
         """
         commits = self.read_history()
 
-        repo_set = set([file.replace(self.repo_path, "") for file in glob.glob(self.repo_path+"/**/*.*", recursive=True)])
+        repo_set = set([file.replace(self.repo_path, "") for file in glob.glob(self.repo_path+"**/*.*", recursive=True)])
+        
         file_dict = {}
         for i in commits.index:
             file_name = commits.loc[i, "filename"]
@@ -257,7 +259,6 @@ class GitReader():
                             commit_time: [add, delete]
                         }
                     }
-
         return file_dict
 
 
