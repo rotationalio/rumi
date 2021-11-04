@@ -18,6 +18,7 @@ import re
 import git
 import glob
 import string
+import shutil
 import argparse
 import pandas as pd
 
@@ -55,10 +56,8 @@ class GitReader():
 
     Parameters
     ----------
-    repo_path: string, default: "./"
-        Path to the repository to monitory the translation status. Default
-        uses the current path. 
-    
+    repo_url: string, default: ""
+        Url for cloning the repository for translation monitoring.
     content_path: string, default: "content/"
         Path from the root of the repository to the directory that contains
         contents that require translation. Default uses the "content/" folder.
@@ -67,10 +66,8 @@ class GitReader():
     file_ext: string, default: "md"
         Extension of the target files for translation monitoring. Defult
         monitoring translation of the markdown files.
-    
     pattern: string, choices: "folder/", ".lang"
         Two types of patterns in which the static site repository is organized.
-        
     langs: string, default: ""
         Language codes joint by a white space as specified by the user. If not 
         specified, GitReader will try to get languages from the filenames in the 
@@ -84,10 +81,18 @@ class GitReader():
         Set of all language codes.
     """
     def __init__(
-        self, repo_path="./", branch="main", langs="",
+        self, repo_url="", repo_path="", branch="main", langs="",
         content_path="content/", file_ext="md", pattern="folder/"
     ):
-        self.validate_repo(repo_path)
+        message = "Please provide either a remote repository url or the path to a local repository"
+        assert not (repo_url!="" and repo_path!=""), message
+
+        self.repo_url = repo_url
+        if repo_url != "":
+            self.repo_name = "repo"
+            self.repo_path = self.repo_name+"/"
+        else:
+            self.validate_repo(repo_path)
         self.branch = branch
         self.langs = langs
         self.content_path = content_path
@@ -101,7 +106,6 @@ class GitReader():
         Check if the user-provided repo_path is a valid directory, if not, check
         if it is the folder name of the repository. Otherwise, message user to
         provide a valid repo_path.
-
         Parameters
         ----------
         repo_path: string, default: "./"
@@ -109,9 +113,10 @@ class GitReader():
             uses the current path. 
         """
         if os.path.isdir(repo_path):
-            self.repo_path = repo_path
-        elif os.path.isdir(repo_path+"/"):
-            self.repo_path = repo_path+"/"
+            if repo_path[-1] != "/":
+                self.repo_path = repo_path+"/"
+            else:
+                self.repo_path = repo_path
         else:
             print("Please specify a valid repository path")
             self.repo_path = None 
@@ -124,13 +129,20 @@ class GitReader():
         -------
         commits: pandas DataFrame
         """
-        repo = git.Repo(self.repo_path)
+        if self.repo_url != "":
+            if os.path.isdir(self.repo_path):
+                shutil.rmtree(self.repo_path)
+            
+            # Clone the repo using user-passing repo_url and save it to a folder named repo_name
+            repo = git.Repo.clone_from(self.repo_url, self.repo_name)
+        else:
+            repo = git.Repo(self.repo_path)
+            print("Using locale repository {}".format(self.repo_path))
         repo.git.checkout(self.branch)
         print("Branch switched to {}".format(self.branch))
 
-        git_bin = repo.git
         command = 'git log --numstat --pretty=format:"\t\t\t%h\t%at\t%aN"'
-        git_log = git_bin.execute(command=command, shell=True)
+        git_log = repo.git.execute(command=command, shell=True)
 
         commits_raw = pd.read_csv(
             StringIO(git_log), 
@@ -200,7 +212,8 @@ class GitReader():
         """
         commits = self.read_history()
 
-        repo_set = set([file.replace(self.repo_path, "") for file in glob.glob(self.repo_path+"/**/*.*", recursive=True)])
+        repo_set = set([file.replace(self.repo_path, "") for file in glob.glob(self.repo_path+"**/*.*", recursive=True)])
+        
         file_dict = {}
         for i in commits.index:
             file_name = commits.loc[i, "filename"]
@@ -246,7 +259,6 @@ class GitReader():
                             commit_time: [add, delete]
                         }
                     }
-
         return file_dict
 
 
@@ -301,12 +313,13 @@ class GitReader():
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument(
-        '--branch', type=str, default="main", 
-        help='Please specify the name of branch to fetch the .git history'
+    group = parser.add_mutually_exclusive_group(required=True)
+    group.add_argument(
+        '--repo_url', type=str, default="", 
+        help='Please specify the url of the repository for translation monitoring'
     )
-    parser.add_argument(
-        '--repo_path', type=str, default=os.getcwd(),
+    group.add_argument(
+        '--repo_path', type=str, default="",
         help='Please specify the path to the repository'
     )
     parser.add_argument(
@@ -314,8 +327,12 @@ if __name__ == "__main__":
         help='Please specify the path from the root of repository to the content to be translated'
     )
     parser.add_argument(
+        '--branch', type=str, default="main", 
+        help='Please specify the name of branch to fetch the .git history'
+    )
+    parser.add_argument(
         '--file_ext', type=str, default='md', 
-        help='Please specify the file extention of the translation files'
+        help='Please specify the file extension of the translation files'
     )
     parser.add_argument(
         '--pattern', type=str, choices=["folder/", ".lang"], required=True,
@@ -328,7 +345,8 @@ if __name__ == "__main__":
 
     config = parser.parse_args()
     reader = GitReader(
-        repo_path=config.repo_path, 
+        repo_url=config.repo_url,
+        repo_path=config.repo_path,
         content_path=config.content_path, 
         branch=config.branch, 
         file_ext=config.file_ext, 

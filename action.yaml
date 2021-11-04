@@ -1,0 +1,51 @@
+
+name: rumi
+
+description: This action monitors translation status of static sites
+
+inputs:
+  repo_url:
+    required: true
+    description: url of the repository for translation monitoring
+
+  content_path:
+    required: false
+    default: "content/"
+    description: path from the root of repository to the content to be translated
+
+  branch:
+    required: false
+    default: "main"
+    description: name of branch to fetch the .git history
+
+  file_ext:
+    required: false
+    default: "md"
+    description: file extension of the translation files
+  
+  pattern:
+    required: true
+    description: pattern of how the translation files are organized (folder/ or .lang)
+
+  langs:
+    required: false
+    default: ""
+    description: target languages to monitor for translation, e.g. "en zh ja" 
+  
+  detail_src_lang:
+    required: false
+    default: ""
+    description: source language to display the translation details
+
+  detail_tgt_lang:
+    required: false
+    default: ""
+    description: target language to display the translation details
+
+runs:
+  using: docker 
+  image: 'Dockerfile'
+
+branding: 
+  icon: arrow-down 
+  color: blue 
