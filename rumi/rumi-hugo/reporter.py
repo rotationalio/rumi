@@ -295,12 +295,13 @@ class StatusReporter():
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument(
-        '--branch', type=str, default="main", 
-        help='Please specify the name of branch to fetch the .git history'
+    group = parser.add_mutually_exclusive_group(required=True)
+    group.add_argument(
+        '--repo_url', type=str, default="", 
+        help='Please specify the url of the repository for translation monitoring'
     )
-    parser.add_argument(
-        '--repo_path', type=str, default=os.getcwd(),
+    group.add_argument(
+        '--repo_path', type=str, default="",
         help='Please specify the path to the repository'
     )
     parser.add_argument(
@@ -308,8 +309,12 @@ if __name__ == "__main__":
         help='Please specify the path from the root of repository to the content to be translated'
     )
     parser.add_argument(
+        '--branch', type=str, default="main", 
+        help='Please specify the name of branch to fetch the .git history'
+    )
+    parser.add_argument(
         '--file_ext', type=str, default='md', 
-        help='Please specify the file extention of the translation files'
+        help='Please specify the file extension of the translation files'
     )
     parser.add_argument(
         '--pattern', type=str, choices=["folder/", ".lang"], required=True,
@@ -331,7 +336,8 @@ if __name__ == "__main__":
 
     config = parser.parse_args()
     reader = GitReader(
-        repo_path=config.repo_path, 
+        repo_url=config.repo_url,
+        repo_path=config.repo_path,
         content_path=config.content_path, 
         branch=config.branch, 
         file_ext=config.file_ext, 
@@ -344,7 +350,7 @@ if __name__ == "__main__":
     langs = reader.get_langs(commits)
 
     reporter = StatusReporter(
-        repo_path=config.repo_path, 
+        repo_path=reader.repo_path, 
         src_lang=config.detail_src_lang, 
         tgt_lang=config.detail_tgt_lang
     )
