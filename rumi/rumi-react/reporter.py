@@ -187,23 +187,26 @@ class ReactReporter():
                     msgid = line.replace("msgid ", "")
                 if line.startswith("msgstr "):
                     msgstr = line.replace("msgstr ", "")
-                    insert[msgid] = msgstr
-        po_file = glob.glob("{}{}{}/*.po".format(
+                    if msgstr != '""':
+                        insert[msgid] = msgstr
+        print(insert)
+        po_file = glob.glob("{}{}/{}/*.po".format(
             self.repo_path, self.content_path, lang
         ))[0]
         
         new_file = os.path.dirname(file)+"inserted_"+os.path.basename(file)
         f_new = open(new_file, "w+")
-        with open(po_file, "w+") as f_old:
+        with open(po_file, "r+") as f_old:
             for line in f_old.readlines():
-                line = line.strip()
                 if line.startswith("msgid "):
-                    msgid = line.replace("msgid ", "")
+                    msgid = line.strip().replace("msgid ", "")
                     f_new.write(line)
                 elif line.startswith("msgstr "):
                     if msgid in insert:
                         msgstr = insert[msgid]
-                    f_new.write("msgstr "+msgstr+"\n")
+                        f_new.write("msgstr "+msgstr+"\n")
+                    else:
+                        f_new.write(line)
                 else:
                     f_new.write(line)
         f_new.close()
@@ -266,4 +269,6 @@ if __name__ == "__main__":
 
     needs, msg_cnt = reporter.get_needs()
     reporter.stats(needs, msg_cnt)
-    reporter.detail(needs, msg_cnt)
+    reporter.detail(needs)
+    reporter.download_needs()
+    reporter.insert_done("ja_translated_test.txt", "ja")
