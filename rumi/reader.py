@@ -187,6 +187,11 @@ class GitReader():
             base_name = file_name.replace("."+lang, "") 
         return base_name, lang
 
+    def suggest_targets(self):
+        pass
+
+    def decide_targets(self):
+        pass
 
     def parse_commits(self):
         """
