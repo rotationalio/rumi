@@ -58,12 +58,12 @@ class GitReader():
     ----------
     repo_url: string, default: ""
         Url for cloning the repository for translation monitoring.
-    content_path: string, default: "content/"
+    content_path: list of string, default: ["content/"]
         Path from the root of the repository to the directory that contains
         contents that require translation. Default uses the "content/" folder.
     branch: string, default: "main"
         Name of the branch to read the github history from. Default to "main".
-    file_ext: string, default: "md"
+    file_ext: list of string, default: ["md"]
         Extension of the target files for translation monitoring. Defult
         monitoring translation of the markdown files.
     pattern: string, choices: "folder/", ".lang"
@@ -82,7 +82,7 @@ class GitReader():
     """
     def __init__(
         self, repo_url="", repo_path="", branch="main", langs="",
-        content_path="content/", file_ext="md", pattern="folder/"
+        content_path=["content/"], file_ext=["md"], pattern="folder/",
     ):
         message = "Please provide either a remote repository url or the path to a local repository"
         assert not (repo_url!="" and repo_path!=""), message
@@ -98,8 +98,19 @@ class GitReader():
         self.content_path = content_path
         self.pattern = pattern
 
-        self.file_types = file_ext.split(" ")
+        self.file_types = file_ext
         self.all_langs = ALL_LANGS
+
+        self.repo_set = self.get_current_repo()
+        self.targets = self.init_targets()
+
+    def get_current_repo(self):
+        # Files that have been deleted are not monitored
+        repo_set = set([
+            file.replace(self.repo_path, "") 
+            for file in glob.glob(self.repo_path+"**/*.*", recursive=True)
+        ])
+        return repo_set
 
     def validate_repo(self, repo_path):
         """
@@ -187,11 +198,32 @@ class GitReader():
             base_name = file_name.replace("."+lang, "") 
         return base_name, lang
 
-    def suggest_targets(self):
-        pass
-
-    def decide_targets(self):
-        pass
+    def add_target(self, filename):
+        for path2file in self.repo_set:
+            basename = os.path.basename(path2file)
+            if filename == basename:
+                self.targets.add(path2file)
+                return
+        print("Please provide a valid file name")
+        return
+    
+    def del_target(self, filename):
+        for path2file in self.repo_set:
+            basename = os.path.basename(path2file)
+            if filename == basename:
+                self.targets.remove(path2file)
+                return
+        print("Please provide a valid file name")
+        return
+        
+    def init_targets(self):
+        target = []
+        for file in self.repo_set:
+            if file.split(".")[-1] in self.file_types:
+                for dir in self.content_path:
+                    if file.startswith(dir):
+                        target.append(file)
+        return set(target)
 
     def parse_commits(self):
         """
@@ -216,9 +248,6 @@ class GitReader():
             The basename is the name of the content that is common among languages.
         """
         commits = self.read_history()
-
-        repo_set = set([file.replace(self.repo_path, "") for file in glob.glob(self.repo_path+"**/*.*", recursive=True)])
-        
         file_dict = {}
         for i in commits.index:
             file_name = commits.loc[i, "filename"]
@@ -229,17 +258,14 @@ class GitReader():
 
             # Clean out the { *** => ***} format in file name
             path_hack = re.search(r'\{.+\}', file_name)
+            rename_sign = " => "
             if path_hack:
                 path_hack = path_hack.group()
                 file_name = file_name.replace(path_hack, path_hack[1:-1].split("=>")[-1].strip())
-
-            # Filter out files that have been deleted from the current repo, 
-            # and are not in the specified content path
-            if (
-                file_name in repo_set and 
-                file_name.startswith(self.content_path) and 
-                file_name.split(".")[-1] in self.file_types
-            ):
+            elif rename_sign in file_name:
+                rename = file_name.split(rename_sign)[-1]
+                file_name = rename
+            if file_name in self.targets:
                 base_name, lang = self.parse_base_lang(file_name)
                 if not base_name:
                     continue
@@ -328,7 +354,7 @@ if __name__ == "__main__":
         help='Please specify the path to the repository'
     )
     parser.add_argument(
-        '--content_path', type=str, default='content/', 
+        '--content_path', nargs="+", default=["content/"], 
         help='Please specify the path from the root of repository to the content to be translated'
     )
     parser.add_argument(
@@ -336,7 +362,7 @@ if __name__ == "__main__":
         help='Please specify the name of branch to fetch the .git history'
     )
     parser.add_argument(
-        '--file_ext', type=str, default='md', 
+        '--file_ext', nargs="+", default=['md'], 
         help='Please specify the file extension of the translation files'
     )
     parser.add_argument(
