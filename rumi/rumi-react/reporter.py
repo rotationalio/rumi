@@ -166,7 +166,7 @@ class ReactReporter():
                     f.write("msgid "+msg+"\n")
                     f.write('msgstr ""\n')
 
-    def insert_done(self, file, lang):
+    def insert_done(self, file, po_file, lang):
         """
         Combine new translations together with other translations in the po file 
         of a language and generate a new file locally.
@@ -175,6 +175,8 @@ class ReactReporter():
         ----------
         file: string
             Path to the file that contains the new translations.
+        po_file: string
+            Name of the po file as used with lingui.js.
         lang: string 
             Language of the translations, e.g. de, fr.
             This lang needs to be consistent with the lingui.js locale setup.
@@ -189,14 +191,15 @@ class ReactReporter():
                     msgstr = line.replace("msgstr ", "")
                     if msgstr != '""':
                         insert[msgid] = msgstr
-        print(insert)
-        po_file = glob.glob("{}{}/{}/*.po".format(
-            self.repo_path, self.content_path, lang
-        ))[0]
+        
+        file = os.path.join(self.repo_path, self.content_path, lang, po_file)
+        print(file)
+        if not os.path.isfile(file):
+            print("Please ensure there are po files in this locale by running lingui extract")
         
         new_file = os.path.dirname(file)+"inserted_"+os.path.basename(file)
         f_new = open(new_file, "w+")
-        with open(po_file, "r+") as f_old:
+        with open(file, "r+") as f_old:
             for line in f_old.readlines():
                 if line.startswith("msgid "):
                     msgid = line.strip().replace("msgid ", "")
@@ -271,4 +274,5 @@ if __name__ == "__main__":
     reporter.stats(needs, msg_cnt)
     reporter.detail(needs)
     reporter.download_needs()
-    reporter.insert_done("ja_translated_test.txt", "ja")
+    print(os.getcwd())
+    reporter.insert_done("test/fixtures/ja_translated_test.txt", "messages.po", "ja")
