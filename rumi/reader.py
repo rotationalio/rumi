@@ -23,7 +23,7 @@ import argparse
 import pandas as pd
 
 from io import StringIO
-
+from version import Version
 
 # Language Codes
 ALL_LANGS = {
@@ -89,7 +89,7 @@ class GitReader():
 
         self.repo_url = repo_url
         if repo_url != "":
-            self.repo_name = "repo"
+            self.repo_name = os.path.basename(repo_url).replace(".git", "")
             self.repo_path = self.repo_name+"/"
         else:
             self.validate_repo(repo_path)
@@ -100,6 +100,8 @@ class GitReader():
 
         self.file_types = file_ext.split(" ")
         self.all_langs = ALL_LANGS
+
+        self.version = Version(self.repo_name)
 
     def validate_repo(self, repo_path):
         """
@@ -117,18 +119,13 @@ class GitReader():
                 self.repo_path = repo_path+"/"
             else:
                 self.repo_path = repo_path
+            self.repo_name = os.path.basename(os.path.dirname(self.repo_path))
         else:
             print("Please specify a valid repository path")
             self.repo_path = None 
+            self.repo_name = None
 
-    def read_history(self):
-        """
-        Read the git history at the specified branch and preprocess the histories.
-        
-        Returns
-        -------
-        commits: pandas DataFrame
-        """
+    def get_repo(self):
         if self.repo_url != "":
             if os.path.isdir(self.repo_path):
                 shutil.rmtree(self.repo_path)
@@ -140,8 +137,19 @@ class GitReader():
             print("Using locale repository {}".format(self.repo_path))
         repo.git.checkout(self.branch)
         print("Branch switched to {}".format(self.branch))
+        return repo
 
-        command = 'git log --numstat --pretty=format:"\t\t\t%h\t%at\t%aN"'
+    def read_history(self, start_time):
+        """
+        Read the git history at the specified branch and preprocess the histories.
+        
+        Returns
+        -------
+        commits: pandas DataFrame
+        """
+        repo = self.get_repo()
+
+        command = 'git log --numstat --pretty=format:"\t\t\t%h\t%at\t%aN" --since="{}"'.format(start_time)
         git_log = repo.git.execute(command=command, shell=True)
 
         commits_raw = pd.read_csv(
@@ -187,7 +195,6 @@ class GitReader():
             base_name = file_name.replace("."+lang, "") 
         return base_name, lang
 
-
     def parse_commits(self):
         """
         Parse the processed commits.
@@ -210,11 +217,12 @@ class GitReader():
             }
             The basename is the name of the content that is common among languages.
         """
-        commits = self.read_history()
+        commits = self.read_history(self.version.latest_date)
 
         repo_set = set([file.replace(self.repo_path, "") for file in glob.glob(self.repo_path+"**/*.*", recursive=True)])
         
-        file_dict = {}
+        file_dict = self.version.load_cache()
+
         for i in commits.index:
             file_name = commits.loc[i, "filename"]
             add = commits.loc[i, "additions"]
@@ -259,8 +267,9 @@ class GitReader():
                             commit_time: [add, delete]
                         }
                     }
-        return file_dict
 
+        self.version.write_cache(file_dict)
+        return file_dict
 
     def get_langs(self, commits):
         """
