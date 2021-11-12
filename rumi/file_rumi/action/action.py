@@ -1,4 +1,4 @@
-# rumi.action
+# rumi.file_rumi.action.action
 # Integration of rumi with github action
 #
 # Author: Tianshu Li
@@ -16,8 +16,8 @@ Integration of rumi with github action
 import os
 import shutil
 
-from reader import GitReader
-from reporter import StatusReporter
+from rumi.file_rumi.reader import GitReader
+from rumi.file_rumi.reporter import StatusReporter
 
 # Get args from environemt variables
 repo_url = os.environ["INPUT_REPO_URL"]

@@ -18,7 +18,7 @@ import argparse
 
 from tabulate import tabulate
 
-from reader import GitReader
+from rumi.file_rumi.reader import GitReader
 
 
 ##########################################################################
