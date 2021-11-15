@@ -305,7 +305,7 @@ if __name__ == "__main__":
         help='Please specify the path to the repository'
     )
     parser.add_argument(
-        '--content_path', type=str, default='content/', 
+        '--content_path', nargs="+", type=str, default=["content/"], 
         help='Please specify the path from the root of repository to the content to be translated'
     )
     parser.add_argument(
@@ -313,7 +313,7 @@ if __name__ == "__main__":
         help='Please specify the name of branch to fetch the .git history'
     )
     parser.add_argument(
-        '--file_ext', type=str, default='md', 
+        '--file_ext', nargs="+", default=['md'], 
         help='Please specify the file extension of the translation files'
     )
     parser.add_argument(
