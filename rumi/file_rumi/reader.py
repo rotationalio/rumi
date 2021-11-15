@@ -1,11 +1,11 @@
 # rumi.reader
-# Git history reader for monitoring translation status
+# Git history reader for file-based translation monitoring
 #
 # Author: Tianshu Li
 # Created: Oct.22 2021
 
 """
-Git history reader for monitoring translation status
+Git history reader for file-based translation monitoring
 """
 
 ##########################################################################
