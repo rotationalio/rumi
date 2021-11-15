@@ -2,34 +2,36 @@
 
 > Not the ones speaking the same language, but the ones sharing the same feeling understand each other.   &mdash;Rumi
 
-A static site translation monitoring tool
+Rumi is a static site translation monitoring tool designed to support the localization (l10n) and internationalization (i18n) of documentation, and to facilitation the long-term maintenance of translated documentation.
 
-## File-based Translation Monitoring Functions
+Rumi currently supports two workflows for translation monitoring: file-based monitoring and message-based monitoring, both of which are described below.
+
+## File-based Translation Monitoring Workflow
 
 ![File-based translation flow exemplified with Hugo site](/fixtures/hugo-flow.png)
 
-- Create reader
+### 1. Create reader
 
 ```python
 reader = GitReader(
         repo_path="",
-        branch="main, 
+        branch="main,
         content_path=["content/"],
-        file_ext=["md"], 
+        file_ext=["md"],
         pattern="folder/",
         langs=""
     )
 ```
 
-Parameters:  
-`repo_path`: Path to the repository for translation monitoring.  
-`branch`: Name of the branch to read the github history from.  
-`content_path`: List of paths from the root of the repository to the directory that contains contents that require translation.  
-`file_ext`: List of extensions of the target files for translation monitoring.  
-`pattern`: Two types of patterns in which the static site repository is organized: "folder/" (organizing contents from each locale into one folder of the locale name, e.g. en/filename.md, fr/filename.md) and ".lang" (organizing contents from each locale by tagging the file name with the locale name, e.g. filename.en.md, filename.fr.md)  
-`langs`: Language codes joint by a white space as specified by the user. If not provided, will monitor languages currently contained in the repository.  
+Parameters:
+`repo_path`: Path to the repository for translation monitoring.
+`branch`: Name of the branch to read the github history from.
+`content_path`: List of paths from the root of the repository to the directory that contains contents that require translation.
+`file_ext`: List of extensions of the target files for translation monitoring.
+`pattern`: Two types of patterns in which the static site repository is organized: "folder/" (organizing contents from each locale into one folder of the locale name, e.g. en/filename.md, fr/filename.md) and ".lang" (organizing contents from each locale by tagging the file name with the locale name, e.g. filename.en.md, filename.fr.md)
+`langs`: Language codes joint by a white space as specified by the user. If not provided, will monitor languages currently contained in the repository.
 
-- Set Target
+### 2. Set Target
 
 The target files for translation monitoring are initialized using `content_path` and `file_ext`, and it can also be specified by adding or deleting single filename.
 
@@ -38,7 +40,7 @@ reader.add_target(filename)
 reader.del_target(filename)
 ```
 
-- Calculate commits, origins, langs
+### 3. Calculate commits, origins, langs
 
 ```python
 commits = reader.parse_commits()       # Structured commit history
@@ -46,21 +48,21 @@ origins = reader.get_origins(commits)  # Original target files
 langs = reader.get_langs(commits)      # Target languages
 ```
 
-- Create reporter
+### 4. Create reporter
 
 ```python
 reporter = StatusReporter(
-    repo_path=reader.repo_path, 
-    src_lang=detail_src_lang, 
+    repo_path=reader.repo_path,
+    src_lang=detail_src_lang,
     tgt_lang=detail_tgt_lang
 )
 ```
 
-`src_lang`: Language code of the source language (the original language of contents) to be reported. If not specified, all source language will be reported.  
+`src_lang`: Language code of the source language (the original language of contents) to be reported. If not specified, all source language will be reported.
 `tgt_lang`: Language code of the target language (language to translate contents
 into) to be reported. If not specified, all target language will be reported.
 
-- Report stats and details
+### 5. Report stats and details
 
 stats mode: displays the number of Open (hasn't been translated), Updated (source file has been updated after translation), and Completed (source file has been translated for all target languages) for each Language. E.g.:
 
@@ -90,7 +92,7 @@ reporter.detail(commits, origins, langs)
 """
 ```
 
-- Github Action
+### 6. Github Action
 
 To setup your repository with Rumi github action so that stats and details are automated on push, include the following code in `.github/workflow/rumi.yaml`:
 
@@ -113,15 +115,17 @@ jobs:
           pattern: "folder/"
 ```
 
-- Resources for the SDE steps:
-  - [Setup Hugo in multilingual mode](https://gohugo.io/content-management/multilingual/)
+### 7. Additional resources for the SDE steps
 
-## Message-based Translation Monitoring Functions
+For more about setting up a Hugo site, check out the documentation about [Hugo in multilingual mode](https://gohugo.io/content-management/multilingual/).
+
+
+## Message-based Translation Monitoring Workflow
 
 ![Message-based translation flow exemplified with React App](/fixtures/react-flow.png)
 
 <!-- need updates after refactoring reporter for unified data structure -->
-- Create reporter
+### 1. Create reporter
 
 ```python
 reporter = ReactReporter(
@@ -130,13 +134,13 @@ reporter = ReactReporter(
 )
 ```
 
-- Calculate needs
+### 2. Calculate needs
 
 ```python
 needs, msg_cnt = reporter.get_needs()
 ```
 
-- Report stats and details
+### 3. Report stats and details
 
 stats mode: Print out a summary of the translation status including number of message missing and word count.
 ```python
@@ -177,13 +181,13 @@ reporter.detail(needs)
 """
 ```
 
-- Github Action
+### 4. Github Action
 
 To setup your repository with Rumi github action so that stats and details are automated on push, include the following code in `.github/workflow/rumi.yaml`:
 
 <!-- will be added after publishing this action. -->
 
-- Rumi Download
+### 5. Rumi Download
 
 Rumi can help you download the new messages from `Lingui Extract` results:
 
@@ -191,7 +195,7 @@ Rumi can help you download the new messages from `Lingui Extract` results:
 reporter.download_needs()
 ```
 
-- Rumi Insert Translated
+### 6. Rumi Insert Translated
 
 Rumi can also insert the new translations back into the old ones, to support the next `Lingui Compile` step.
 
@@ -200,7 +204,9 @@ reporter.insert_done("new_translations.txt", "old_messages.po", language_code)
 
 ```
 
-- Recources for the SDE steps:
+### 7. Additional Resources for the SDE steps
+
+Here are some additional resources for getting set up with Lingui on your React project:
   - UI Dev: Setup Lingui.js
     - Installation: [Setup Lingui with React project](https://lingui.js.org/tutorials/setup-react.html)
     - Wrap Messages: Wrap UI text message according to [Lingui patterns](https://lingui.js.org/tutorials/react-patterns.html)
