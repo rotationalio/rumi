@@ -27,6 +27,24 @@ from rumi.base_reader import BaseReader
 
 
 class MsgReader(BaseReader):
+    """
+    MsgReader reads the github history, parses it into a commit dictionary,
+    and also parses the source files and source and target languages.
+
+    Parameters
+    ----------
+    repo_path: string, default: "./"
+        Url for cloning the repository for translation monitoring.
+    content_path: list of string, default: ["content/"]
+        Path from the root of the repository to the directory that contains
+        contents that require translation. Default uses the "content/" folder.
+    branch: string, default: "main"
+        Name of the branch to read the github history from. Default to "main".
+    extension: list of string, default: ["md"]
+        Extension of the target files for translation monitoring. Defult
+        monitoring translation of the markdown files.
+    src_lang: 
+    """
     def __init__(
             self, content_path, extension, src_lang,
             repo_path="./", branch="main"
@@ -121,9 +139,10 @@ class MsgReader(BaseReader):
         Parse timestamp in git log (e.g. Thu Nov 11 22:45:36 2021 +0800) into a 
         float number of timestamp.
         """
-        s = " ".join(s.split(" ")[1:-1])
-        dt = datetime.strptime(s, '%a %m %d %H:%M:%S %y')
-        return dt
+        
+        dt = datetime.strptime(s, '%a %b %d %H:%M:%S %Y %z')
+        ts = float(datetime.timestamp(dt))
+        return ts
 
     def parse_lang(self, filename):
         """

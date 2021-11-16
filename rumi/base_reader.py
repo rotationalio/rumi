@@ -24,6 +24,23 @@ import glob
 
 
 class BaseReader():
+    """
+    BaseReader access the repository and init target files for translation 
+    monitoring.
+
+    Parameters
+    ----------
+    repo_path: string, default: ""
+        Path to the repository for translation monitoring.
+    content_path: list of string, default: ["content/"]
+        Path from the root of the repository to the directory that contains
+        contents that require translation. Default uses the "content/" folder.
+    branch: string, default: "main"
+        Name of the branch to read the github history from. Default to "main".
+    extension: list of string, default: ["md"]
+        Extension of the target files for translation monitoring. Defult
+        monitoring translation of the markdown files.
+    """
     def __init__(
         self, content_path, extension, repo_path="./", branch="main", 
     ) -> None:

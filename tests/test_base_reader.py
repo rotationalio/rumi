@@ -21,12 +21,15 @@ from rumi.base_reader import BaseReader
 
 
 ##########################################################################
-## BaseReader Test Cases
+# BaseReader Test Cases
 ##########################################################################
 
 
 class TestBaseReader():
     def test_fixtures_base_reader(self, tmpdir):
+        """
+        Generate fixture repo for testing BaseReader.
+        """
         repo_name = "base_reader_repo"
         repo_path = os.path.join(tmpdir, repo_name)
         repo = git.Repo.init(repo_path)
