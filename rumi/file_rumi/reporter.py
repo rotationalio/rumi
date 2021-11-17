@@ -146,7 +146,16 @@ class StatusReporter():
             for file in files:
                 if file != origin:
                     if files[file]["lt"] >= files[origin]["lt"]:
-                        remain -= 1
+                        # When source and target file were changed in the same
+                        # commit but source file has more additions, the status
+                        # is also marked as updated.
+                        if (
+                            files[file]["lt"] == files[origin]["lt"] and 
+                            files[file]["history"][files[origin]["lt"]][0] < files[origin]["history"][files[origin]["lt"]][0]  
+                        ):
+                            updated = True
+                        else:
+                            remain -= 1
                     else:
                         updated = True
             if remain == 1:
@@ -258,18 +267,33 @@ class StatusReporter():
             for file in files:
                 if file != origin:
                     target_lang = files[file]["lang"]
-                    if files[file]["lt"] < files[origin]["lt"]:
+                    src_lt = files[origin]["lt"]
+                    tgt_lt = files[file]["lt"]
+                    
+                    def append_update():
                         update_tgt_lang.append(target_lang)
-
-                        # Count all additions in the origin file after current file's last update timestamp
-                        update_lines = self.count_additions(files[origin]["history"], files[file]["lt"])
                         pct = str(round(update_lines/total_lines, 3) * 100)+"%"
-                        
                         if (
                             (self.src_lang=="" or self.src_lang==src_lang) and 
                             (self.tgt_lang=="" or self.tgt_lang==target_lang)
                         ):
                             data.append([origin, "Update", src_lang, target_lang, "?", pct])
+                    
+                    if tgt_lt < src_lt:
+                        # Count all additions in the origin file after current file's last update timestamp
+                        update_lines = self.count_additions(files[origin]["history"], tgt_lt)
+                        append_update()
+                    # When source and target file were changed in the same
+                    # commit but source file has more additions, the status
+                    # is also marked as updated.
+                    elif tgt_lt == src_lt:
+                        src_add = files[origin]["history"][files[origin]["lt"]][0]
+                        tgt_add = files[file]["history"][files[origin]["lt"]][0]
+                        if src_add > tgt_add:
+                            update_lines = src_add - tgt_add
+                            append_update()
+                        else:
+                            complete_tgt_lang.append(target_lang)                        
                     else:
                         complete_tgt_lang.append(target_lang)
 

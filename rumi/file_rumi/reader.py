@@ -72,6 +72,8 @@ class GitReader():
         Language codes joint by a white space as specified by the user. If not
         specified, GitReader will try to get languages from the filenames in the
         current repository for monitoring.
+    src_lang: string, default: "en"
+        Default source language set by user.
 
     Attributes
     ----------
@@ -83,6 +85,7 @@ class GitReader():
     def __init__(
         self, repo_url="", repo_path="", branch="main", langs="",
         content_path=["content/"], file_ext=["md"], pattern="folder/",
+        src_lang = "en"
     ):
         message = "Please provide either a remote repository url or the path to a local repository"
         assert not (repo_url!="" and repo_path!=""), message
@@ -104,6 +107,8 @@ class GitReader():
         self.version = Version(self.repo_name)
         self.repo_set = self.get_current_repo()
         self.targets = self.init_targets()
+
+        self.src_lang = src_lang
 
     def get_current_repo(self):
         # Files that have been deleted are not monitored
@@ -348,9 +353,13 @@ class GitReader():
             st = float('inf')
             origins[base_file] = None
             for file in commits[base_file]:
-                if commits[base_file][file]["ft"] < st:
+                file_dict = commits[base_file][file]
+                if file_dict["ft"] < st:
                     origins[base_file] = file
-                    st = commits[base_file][file]["ft"]
+                    st = file_dict["ft"]
+                elif file_dict["ft"] == st:
+                    if file_dict["lang"] == self.src_lang:
+                        origins[base_file] = file
         return origins
 
 
