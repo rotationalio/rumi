@@ -73,6 +73,7 @@ class TestBaseReader:
         Assert that files outside content_path or not with file extension is
         not identified as target.
         """
+        # 11
         # Setup repository
         repo_name = self.generate_fixtures(tmpdir)
 

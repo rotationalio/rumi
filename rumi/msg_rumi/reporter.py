@@ -95,11 +95,15 @@ class MsgReporter():
         for msg in commits:
             src_lt = commits[msg][src_lang]["lt"]
             for locale in commits[msg]:
-                if locale == src_lang: pass
+                
                 if not (locale in stats):
                     stats[locale] = {
                         "total": 0, "open": 0, "updated": 0, "completed": 0
                     }
+
+                if locale == src_lang: 
+                    stats[locale]["total"] += 1
+                    continue
                 
                 stats[locale]["total"] += 1
 
@@ -150,13 +154,16 @@ class MsgReporter():
         for msg in commits:
             src_lt = commits[msg][src_lang]["lt"]
             for locale in commits[msg]:
-                if locale == src_lang: pass
                 if not (locale in details):
                     details[locale] = {
                         "open": 0, "msgs": [], "wc": 0
                     }
+                curr_msg = commits[msg][locale]["history"][-1][-1] 
                 tgt_lt = commits[msg][locale]["lt"]
-                if src_lt == tgt_lt:
+                if (
+                    (locale == src_lang and curr_msg != "deleted") or 
+                    (locale != src_lang and src_lt == tgt_lt)
+                ): 
                     details[locale]["open"] += 1
                     details[locale]["msgs"].append(msg)
                     details[locale]["wc"] += len(" ".split(msg))
@@ -213,12 +220,13 @@ class MsgReporter():
             print("-"*70)
             print(lang, "Open:", detail["wc"])
             # Format msg with textwrap
-            fmt_msgs = ["\n".join(textwrap.wrap(s)) for s in detail["msgs"]]
-            print("\n".join(fmt_msgs))
+            if len(detail["msgs"]) > 0:
+                fmt_msgs = ["\n".join(textwrap.wrap(s)) for s in detail["msgs"]]
+                print("\n".join(fmt_msgs))
         print("-"*70)
         
 
-    def download_needs(self, details, path="./"):
+    def download_needs(self, details, lang, path="./"):
         """
         Writes the msgid that needs to be translated into a .txt file for each
         language.
@@ -238,18 +246,18 @@ class MsgReporter():
             current path.
         """
 
-        for lang in details:
-            detail = details[lang]
-            filename = "{}_needing_translation.txt".format(lang)
-            print("Creating file {}{}".format(path, filename))
-            with open(filename, "w+") as f:
-                header = "Language: {}, {} words needing translation \n".format(lang, detail["wc"])
-                f.write(header)
-                for msg in details["msgs"]:
-                    f.write("msgid "+msg+"\n")
-                    f.write('msgstr ""\n')
+        detail = details[lang]
+        filename = os.path.join(path, "{}_needing_translation.txt".format(lang))
+        print("Creating file {}".format(filename))
+        with open(filename, "w+") as f:
+            header = "Language: {}, {} words needing translation \n".format(lang, detail["wc"])
+            f.write(header)
+            for msg in detail["msgs"]:
+                f.write("msgid "+msg+"\n")
+                f.write('msgstr ""\n')
+                f.write("\n")
 
-    def insert_done(self, file, po_file, lang):
+    def insert_translations(self, file, po_file):
         """
         Combine new translations together with other translations in the po file 
         of a language and generate a new file locally.
@@ -259,10 +267,7 @@ class MsgReporter():
         file: string
             Path to the file that contains the new translations.
         po_file: string
-            Name of the po file as used with lingui.js.
-        lang: string 
-            Language of the translations, e.g. de, fr.
-            This lang needs to be consistent with the lingui.js locale setup.
+            Path to the po file as used with lingui.js.
         """
         insert = {}
         with open (file, "r+") as f_insert:
@@ -274,15 +279,16 @@ class MsgReporter():
                     msgstr = line.replace("msgstr ", "")
                     if msgstr != '""':
                         insert[msgid] = msgstr
-        
-        file = os.path.join(self.repo_path, self.content_path, lang, po_file)
-        if not os.path.isfile(file):
-            print("Please ensure there are po files in this locale by running lingui extract")
-        
-        new_file = os.path.dirname(file)+"inserted_"+os.path.basename(file)
+
+        new_file = os.path.join(
+            os.path.dirname(file), "inserted_"+os.path.basename(file)
+        )
         f_new = open(new_file, "w+")
-        with open(file, "r+") as f_old:
+
+        with open(po_file, "r+") as f_old:
+            
             for line in f_old.readlines():
+                
                 if line.startswith("msgid "):
                     msgid = line.strip().replace("msgid ", "")
                     f_new.write(line)
