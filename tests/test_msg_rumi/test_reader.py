@@ -1,11 +1,11 @@
 # rumi.test_msg_rumi.test_reader
-# Test the reader for message-based translation
+# Test the reader for message-based monitoring
 #
 # Author: Tianshu Li
 # Created: Nov.15 2021
 
 """
-Test the reader for message-based translation
+Test the reader for message-based monitoring
 """
 
 ##########################################################################
@@ -30,6 +30,7 @@ class TestMsgReader():
         """
         Generate fixture repo for testing MsgReader.
         """
+        # 8
         repo_name = "msg_reader_repo"
         repo_path = os.path.join(tmpdir, repo_name)
         repo = git.Repo.init(repo_path)
@@ -47,6 +48,12 @@ class TestMsgReader():
         repo.git.add(A=True)
         repo.git.commit(m="adding test fixtures")
         return repo
+
+    def test_parse_history(self):
+        """
+        Assert git history is correctly parsed into a commit dictionary.
+        """
+        # 9
 
     def test_parse_timestamp(self, tmpdir):
         """

@@ -64,6 +64,7 @@ class TestBaseReader():
         Assert that all added files and none deleted files in git history are 
         included in repo_set.
         """
+        # 10
         # Setup repository
 
         # Asserting repo_set result
@@ -73,6 +74,7 @@ class TestBaseReader():
         Assert that files outside content_path or not with file extension is 
         not identified as target.
         """
+        # 11
         # Setup repository
         # Asserting target results
 
