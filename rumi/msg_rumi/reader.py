@@ -94,28 +94,51 @@ class MsgReader(BaseReader):
         
         for tgt_file in self.targets:
             tgt_lang = self.parse_lang(tgt_file)
-            command="git log -p %s".format(tgt_file)
+            command="git log -p --reverse {} ".format(tgt_file)
             git_log = repo.git.execute(command=command, shell=True)
 
-            for line in StringIO(git_log).readlines():
+            for line in StringIO(git_log).readlines():                
                 # Date line
                 if line.startswith(patterns["dt"]):
-                    timestamp = self.parse_timestamp(line.replace(patterns["dt"]).strip())
+                    timestamp = self.parse_timestamp(line.replace(patterns["dt"], "").strip())
                 # When line starts with "+msgid ", save temp var msg
                 elif line.startswith(patterns["new_msg"]):
-                    msg = line.replace(patterns["new_msg"], "")
+                    msg = line.replace(patterns["new_msg"], "").strip()
+                    if not (msg in commits):
+                        commits[msg] = {
+                            tgt_lang: {
+                                "filename": tgt_file,
+                                "ft": timestamp,
+                                "lt": timestamp,
+                                "history": []
+                            }
+                        }
+                    else: 
+                        commits[msg][tgt_lang] = {
+                            "filename": tgt_file,
+                            "ft": timestamp,
+                            "lt": timestamp,
+                            "history": []
+                        }
                 # When line starts with " msgid ", save temp var msg
                 elif line.startswith(patterns["update_msg"]):
-                    msg = line.replace(patterns["update_msg"])
+                    msg = line.replace(patterns["update_msg"], "").strip()
+                    if not tgt_lang in commits[msg]:
+                        commits[msg][tgt_lang] = {
+                                "filename": tgt_file,
+                                "ft": timestamp,
+                                "lt": timestamp,
+                                "history": []
+                            }
                 # When line starts with "-msgid ", document the deletion, also
                 # save temp var msg incase msgstr is also deleted in next line
                 elif line.startswith(patterns["del_msg"]):
-                    msg = line.replace(patterns["del_msg"])
+                    msg = line.replace(patterns["del_msg"], "").strip()
                     commits[msg][tgt_lang]["lt"] = timestamp
-                    commits[msg][tgt_lang]["history"].append((timestamp, "deleted"))
+                    commits[msg][tgt_lang]["history"].append((timestamp, '"deleted"'))
 
                 elif line.startswith(patterns["new_trans"]):
-                    trans = line.replace(patterns["new_trans"], "")
+                    trans = line.replace(patterns["new_trans"], "").strip()
                     if msg == "":
                         print("Unable to parse the git history")
                     else:
@@ -124,14 +147,13 @@ class MsgReader(BaseReader):
                         msg = ""
 
                 elif line.startswith(patterns["del_trans"]):
-                    trans = line.replace(patterns["del_trans"], "")
+                    trans = line.replace(patterns["del_trans"], "").strip()
                     if msg == "":
                         print("Unable to parse the git history")
                     else:
-                        # When msgid isn't deleted bu msgstr is:
+                        # When msgid isn't deleted but msgstr is:
                         if commits[msg][tgt_lang]["lt"] != timestamp:
-                            commits[msg][tgt_lang]["history"].append((timestamp, "deleted"))
-                        msg = ""
+                            commits[msg][tgt_lang]["history"].append((timestamp, ""))
         return commits
 
     def parse_timestamp(self, s):

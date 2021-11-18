@@ -13,7 +13,6 @@ Test the reporter for translation-based monitoring
 ##########################################################################
 
 
-import os
 import pytest
 
 from io import StringIO
@@ -128,12 +127,6 @@ def new_trans():
 
 class TestMsgReporter():
 
-    def test_fixtures_msg_reporter(self, ):
-        """
-        Generate fixture repo for testing MsgReporter.
-        """
-        
-
     def test_get_stats(self, commits, src_lang):
         """
         Assert that stats are calculated correctly based on commits and src_lang.
@@ -197,8 +190,8 @@ class TestMsgReporter():
         reporter = MsgReporter()
         details = reporter.get_details(commits, src_lang)
         reporter.download_needs(details, "fr", path=tmpdir)
-
-        assert os.path.isfile(os.path.join(tmpdir, "fr_needing_translation.txt"))
+        want = tmpdir / "fr_needing_translation.txt"
+        assert want in tmpdir.listdir()
     
     def test_insert_translations(
         self, tmpdir, old_trans, add_trans, new_trans
@@ -206,20 +199,14 @@ class TestMsgReporter():
         """
         Assert translations and the original file is correctly combined.
         """
-        old_file = os.path.join(tmpdir, "old_file.txt")
-        with open(old_file, "w+") as f:
-            f.write(old_trans)
+        old_file = tmpdir / "old_file.txt"
+        old_file.write_text(old_trans, encoding="utf8")
 
-        add_file = os.path.join(tmpdir, "file.txt")
-        with open(add_file, "w+") as f:
-            f.write(add_trans)
+        add_file = tmpdir / "file.txt"
+        add_file.write_text(add_trans, encoding="utf8")
         
         reporter = MsgReporter()
         reporter.insert_translations(add_file, old_file)
 
         got = tmpdir / "inserted_file.txt"
-        want = new_trans.strip().split("\n")
-        with open(got, "r+") as f:
-            assert len(f.readlines()) == len(want)
-            for line, want_line in zip(f.readlines(), want):
-                assert line.strip() == want_line
+        assert got.read_text(encoding="utf8") == new_trans
