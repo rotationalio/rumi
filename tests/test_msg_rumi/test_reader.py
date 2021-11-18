@@ -30,7 +30,6 @@ class TestMsgReader:
         """
         Generate fixture repo for testing MsgReader.
         """
-        # 8
         repo_name = "msg_reader_repo"
         repo_path = tmpdir / repo_name
         repo = git.Repo.init(repo_path)
