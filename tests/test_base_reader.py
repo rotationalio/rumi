@@ -32,6 +32,8 @@ class TestBaseReader():
         repo_name = "base_reader_repo"
         repo_path = tmpdir / repo_name
         repo = git.Repo.init(repo_path)
+        repo.config_writer().set_value("user", "name", "testrumi").release()
+        repo.config_writer().set_value("user", "email", "testrumiemail").release()
         
         initial_file = repo_path / "initial_file.txt"
         initial_file.write_text("", encoding="utf8")
