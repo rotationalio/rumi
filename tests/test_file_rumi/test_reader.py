@@ -1,57 +1,82 @@
+# rumi.test_file_rumi.test_reader
+# Test the reader for file-based translation monitoring
+# 
+# Author: Tianshu Li
+# Created: Nov.19 2021
+
+"""
+Test the reader for file-based translation monitoring
+"""
+
+##########################################################################
+# Imports
+##########################################################################
 
 
-# ##########################################################################
-# # GitReader Test Cases
-# ##########################################################################
 
 
-# class TestGitReader():
-#     """
-#     GitReader Tests
-#     """
 
-#     def test_get_current_repo(self, repo_path):
-#         """
-#         Test no deleted file in resulting current repo set.
-#         """
-#         # setup git history locally: folder/, and .lang with delete commit
 
-#     def test_validate_repo_path(self, repo_path):
-#         """
-#         Assert user can provide a repo_path with/without "/" in the end.
-#         """
+##########################################################################
+# FileReader Test Cases
+##########################################################################
 
-#     def test_read_history(self, repo_path):
-#         """
-#         Test reading git history from specified branch.
-#         """
 
-#     def test_parse_base_lang(self, file_name):
-#         """
-#         Test parsing basename and language from a given file_name.
-#         """
+class TestFileReader():
+    """
+    FileReader Tests
+    """
 
-#     def test_add_target(self, targets, filename):
-#         """
-#         Test adding single target file by name.
-#         """ 
+    def test_clean_filename(self):
+        """
+        Assert renaming path hack can be removed from a filename in git log.
+        """
+        pass
 
-#     def test_del_target(self, targets, filename):
-#         """
-#         Test deleting single target file by name.
-#         """
+    def test_read_history(self):
+        """
+        Test reading git history from specified branch.
+        """
+        pass
+    
+    def test_parse_history(self):
+        """
+        Assert git history is correctly parsed into a commit dictionary.
+        """
+        pass
+
+    def test_parse_base_lang(self):
+        """
+        Test parsing basename and language from a given file_name.
+        """
+        pass
+
+    def test_get_langs(self):
+        """
+        Test getting languages from structured commit history.
+        """
+        pass
+
+    def test_set_langs(self):
+        """
         
-#     def test_init_targets(self, content_path, file_ext):
-#         """
-#         Test initializing target files given target content path and file extention.
-#         """
+        """
+        pass
 
-#     def test_get_langs(self, commits):
-#         """
-#         Test getting languages from structured commit history.
-#         """
+    def test_set_origins(self):
+        """
+        
+        """
+        pass
 
-#     def test_get_origins(self, commits):
-#         """
-#         Test getting origin files from structured commit history.
-#         """
+    def test_add_target(self):
+        """
+        Test adding single target file by name.
+        """ 
+        pass
+
+    def test_del_target(self):
+        """
+        Test deleting single target file by name.
+        """
+        pass

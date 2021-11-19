@@ -1,11 +1,11 @@
-# rumi.reporter
-# Translation status reporter based on commit history from git
+# rumi.file_rumi.reporter
+# Reporter for file-based translation monitoring
 #
 # Author: Tianshu Li
 # Created: Oct.22 2021
 
 """
-Translation status reporter based on commit history from git
+Reporter for file-based translation monitoring
 """
 
 ##########################################################################
@@ -13,16 +13,13 @@ Translation status reporter based on commit history from git
 ##########################################################################
 
 
-import os
-import argparse
-
 from tabulate import tabulate
 
 from rumi.file_rumi.reader import GitReader
 
 
 ##########################################################################
-# Class StatusReporter
+# Class FileReporter
 ##########################################################################
 
 
@@ -33,7 +30,7 @@ class StatusReporter:
     1. stats mode: displays the number of Open (hasn't been translated),
     Updated (source file has been updated after translation), Completed
     (source file has been translated for all target languages). E.g.:
-        | Language   |   Origin |   Open |   Updated |   Completed |
+        | Language   |   Total  |   Open |   Updated |   Completed |
         |------------+----------+--------+-----------+-------------|
         | fr         |        0 |      0 |         0 |           0 |
         | en         |       17 |     12 |         1 |           4 |
@@ -68,7 +65,7 @@ class StatusReporter:
         self.src_lang = src_lang
         self.tgt_lang = tgt_lang
 
-    def get_num_origin(self, commits, origins, langs):
+    def set_stats(self, commits):
         """
         Count number of origin files in each language
 
@@ -78,13 +75,16 @@ class StatusReporter:
             Commit history of the repository organized by
             {
                 "basename": {
-                    "filename": {
-                        "lang": "language of this file",
-                        "ft": "timestamp of the first commit",
-                        "lt": "timestamp of the last commit",
+                    "locale": {
+                        "filename": name of the target file,
+                        "ft": timestamp of the first commit (float),
+                        "lt": timestamp of the last commit (float),
                         "history": {
                             timestamp (float): [#additions, #deletions]
                         }
+                    },
+                    "origin": {
+                        source file's locale
                     }
                 }
             }
@@ -104,17 +104,50 @@ class StatusReporter:
         cnt: dictionary
             Count of source files for each language organized by
             {
-                "language code": number of source files
+                "basename": {
+                    "locale": {
+                        "filename": name of the target file,
+                        "ft": timestamp of the first commit (float),
+                        "lt": timestamp of the last commit (float),
+                        "history": {
+                            timestamp (float): [#additions, #deletions]
+                        },
+                        "status": {
+                            "open", "updated", "completed", or "source"
+                        }
+                    },
+                    "origin": {
+                        source file's locale
+                    }
+                }
             }
         """
-        cnt = {lang: 0 for lang in langs}
-        for base_file in origins:
-            file = origins[base_file]
-            lang = commits[base_file][file]["lang"]
-            cnt[lang] += 1
-        return cnt
 
-    def get_status(self, commits, origins, langs):
+        for basefile in commits:
+            files = commits[basefile]
+            for lang in files:
+                src_lang = files["origin"]
+                if lang == src_lang:
+                    files[lang]["status"] = "source"
+                else:
+                    if files[lang] == {}:
+                        files[lang]["status"] = "open"
+                    elif files[lang]["lt"] > files[src_lang]["lt"]:
+                        files[lang]["status"] = "completed"
+                    elif files[lang]["lt"] < files[src_lang]["lt"]:
+                        files[lang]["status"] = "updated"
+                    elif files[lang]["lt"] == files[src_lang]["lt"]:
+                        # When source and target file were changed in the same
+                        # commit but source file has more cumulative additions, 
+                        # the status is also marked as updated.
+                        tgt_add = sum(change[0] for change in files[lang]["history"])
+                        src_add = sum(change[0] for change in files[src_lang]["history"])
+                        if (tgt_add < src_add):
+                            files[lang]["status"] = "updated"
+                        else:
+                            files[lang]["status"] = "completed"
+
+    def get_stats(self, commits):
         """
         Count number of source files that are Open, Updated, Completed
 
@@ -123,17 +156,42 @@ class StatusReporter:
         complete: dictionary
             Count of source files in Complete status organized by
             {
-                "language code": number of completed source files
+                "basename": {
+                    "locale": {
+                        "filename": name of the target file,
+                        "ft": timestamp of the first commit (float),
+                        "lt": timestamp of the last commit (float),
+                        "history": {
+                            timestamp (float): [#additions, #deletions]
+                        },
+                        "status": {
+                            "open", "updated", "completed", or "source"
+                        }
+                    },
+                    "origin": {
+                        source file's locale
+                    }
+                }
             }
         update: dictionary
             Count of source files in Update status organized by
             {
-                "language code": number of updated source files
+                locale: {
+                    "total": int, 
+                    "open": int, 
+                    "updated": int,
+                    "completed": int
+                }
             }
         open: dictionary
             Count of source files in Open status organized by
             {
-                "language code": number of open source files
+                locale: {
+                    "total": int, 
+                    "open": int, 
+                    "updated": int,
+                    "completed": int
+                }
             }
         """
         n_langs = len(langs)
@@ -168,12 +226,12 @@ class StatusReporter:
                 open[files[origin]["lang"]] += 1
         return complete, update, open
 
-    def stats(self, commits, origins, langs):
+    def detail(self, details):
         """
-        Print out a summary of the translation status
+        Print out the details of the work required for translating each source
+        file, its Open/Update status, source and target language, and the count
+        of words in the source file.
         """
-        complete, update, open = self.get_status(commits, origins, langs)
-        origin = self.get_num_origin(commits, origins, langs)
         data = []
         for lang in langs:
             data.append([lang, origin[lang], open[lang], update[lang], complete[lang]])
@@ -223,17 +281,24 @@ class StatusReporter:
             cnt = len(f.readlines())
         return cnt
 
-    def count_additions(self, history, timestamp):
+    def count_additions(self, src_file, tgt_file):
         """
-        Count the number of additions maintained by git history
-        after a provided timestamp.
+        Count the number of additions in tgt_file maintained by git history
+        after src_file's last commit.
 
         Parameters
         ----------
         history: dictionary
             Git history of a file parsed by GitReader:
             {
-                timestamp: [#additions, #deletions]
+                "filename": name of the target file,
+                "ft": timestamp of the first commit (float),
+                "lt": timestamp of the last commit (float),
+                "history": {
+                    timestamp (float): [#additions, #deletions]
+                },
+                "status": {
+                    "open", "updated", "completed", or "source"
             }
 
         timestamp: float

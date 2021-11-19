@@ -1,4 +1,4 @@
-# rumi.reader
+# rumi.file_rumi.reader
 # Git history reader for file-based translation monitoring
 #
 # Author: Tianshu Li
@@ -16,10 +16,7 @@ Git history reader for file-based translation monitoring
 import os
 import re
 import git
-import glob
 import string
-import shutil
-import argparse
 import pandas as pd
 
 from io import StringIO
@@ -215,25 +212,25 @@ ALL_LANGS = {
 
 
 ##########################################################################
-# Class GitReader
+# Class FileReader
 ##########################################################################
 
 
 class GitReader:
     """
-    GitReader reads the github history, parses it into a commit dictionary,
+    FileReader reads the github history, parses it into a commit dictionary,
     and also parses the source files and source and target languages.
 
     Parameters
     ----------
-    repo_url: string, default: ""
-        Url for cloning the repository for translation monitoring.
+    repo_path: string, default: "./"
+        Path to the repository for translation monitoring.
     content_path: list of string, default: ["content/"]
         Path from the root of the repository to the directory that contains
         contents that require translation. Default uses the "content/" folder.
     branch: string, default: "main"
         Name of the branch to read the github history from. Default to "main".
-    file_ext: list of string, default: ["md"]
+    extensions: list of string, default: ["md"]
         Extension of the target files for translation monitoring. Defult
         monitoring translation of the markdown files.
     pattern: string, choices: "folder/", ".lang"
@@ -244,13 +241,6 @@ class GitReader:
         current repository for monitoring.
     src_lang: string, default: "en"
         Default source language set by user.
-
-    Attributes
-    ----------
-    file_types: list
-        List of file_types such as "md" or "po" that require translation monitoring.
-    all_lang: set
-        Set of all language codes.
     """
 
     def __init__(
@@ -277,14 +267,8 @@ class GitReader:
         self.langs = langs
         self.content_path = content_path
         self.pattern = pattern
-
-        self.file_types = file_ext
+        self.langs = langs
         self.all_langs = ALL_LANGS
-
-        self.version = Version(self.repo_name)
-        self.repo_set = self.get_current_repo()
-        self.targets = self.init_targets()
-
         self.src_lang = src_lang
 
     def get_current_repo(self):
@@ -297,16 +281,9 @@ class GitReader:
         )
         return repo_set
 
-    def validate_repo(self, repo_path):
+    def clean_filename(self, filename):
         """
-        Check if the user-provided repo_path is a valid directory, if not, check
-        if it is the folder name of the repository. Otherwise, message user to
-        provide a valid repo_path.
-        Parameters
-        ----------
-        repo_path: string, default: "./"
-            Path to the repository to monitory the translation status. Default
-            uses the current path.
+        Clean out the { *** => ***} format in file name
         """
         if os.path.isdir(repo_path):
             if repo_path[-1] != "/":
@@ -336,7 +313,6 @@ class GitReader:
     def read_history(self, start_time):
         """
         Read the git history at the specified branch and preprocess the histories.
-
         Returns
         -------
         commits: pandas DataFrame
@@ -360,16 +336,10 @@ class GitReader:
         commits = commits.dropna()
         return commits
 
-    def parse_base_lang(self, file_name):
+    def parse_history(self, start_time):
         """
-        Given a full path/to/file/filename, parse the basename and langauge with
-        consideration of the two types of repository organization patterns: "folder/"
-        and ".lang".
-
-        Parameters
-        ----------
-        file_name: string
-            Name of the file.
+        Parse the output from git log command, into a dictionary of file commit
+        history.
 
         Returns
         -------
@@ -429,13 +399,16 @@ class GitReader:
             Commit history of the repository organized by
             {
                 "basename": {
-                    "filename": {
-                        "lang": "language of this file",
+                    "locale": {
+                        "filename": name of the target file,
                         "ft": timestamp of the first commit (float),
                         "lt": timestamp of the last commit (float),
                         "history": {
                             timestamp (float): [#additions, #deletions]
                         }
+                    },
+                    "origin": {
+                        source file's locale
                     }
                 }
             }
@@ -452,11 +425,11 @@ class GitReader:
 
         file_dict = self.version.load_cache()
 
-        for i in commits.index:
-            file_name = commits.loc[i, "filename"]
-            add = commits.loc[i, "additions"]
+        for i in new_commits.index:
+            filename = new_commits.loc[i, "filename"]
+            add = new_commits.loc[i, "additions"]
             add = 0 if add == "-" else int(add)
-            delete = commits.loc[i, "deletions"]
+            delete = new_commits.loc[i, "deletions"]
             delete = 0 if delete == "-" else int(delete)
 
             # Clean out the { *** => ***} format in file name
@@ -474,31 +447,66 @@ class GitReader:
                 base_name, lang = self.parse_base_lang(file_name)
                 if not base_name:
                     continue
-                commit_time = float(commits.loc[i, "timestamp"])
+                commit_time = float(new_commits.loc[i, "timestamp"])
 
                 if base_name not in file_dict:
                     file_dict[base_name] = {}
 
-                if file_name in file_dict[base_name]:
-                    if commit_time < file_dict[base_name][file_name]["ft"]:
-                        file_dict[base_name][file_name]["ft"] = commit_time
-                    elif commit_time > file_dict[base_name][file_name]["lt"]:
-                        file_dict[base_name][file_name]["lt"] = commit_time
+                if filename in commits[base_name]:
+                    if commit_time < commits[base_name][lang]["ft"]:
+                        commits[base_name][lang]["ft"] = commit_time
+                    elif commit_time > commits[base_name][lang]["lt"]:
+                        commits[base_name][lang]["lt"] = commit_time
 
                     file_dict[base_name][file_name]["history"][commit_time] = [
                         add,
                         delete,
                     ]
                 else:
-                    file_dict[base_name][file_name] = {
-                        "lang": lang,
+                    commits[base_name][lang] = {
+                        "filename": filename,
                         "ft": commit_time,
                         "lt": commit_time,
                         "history": {commit_time: [add, delete]},
                     }
 
-        self.version.write_cache(file_dict)
-        return file_dict
+        self.version.write_cache(commits)
+
+        commits = self.set_langs(commits)
+        commits = self.set_origins(commits)
+        return commits
+
+    def parse_base_lang(self, file_name):
+        """
+        Given a full path/to/file/filename, parse the basename and langauge with
+        consideration of the two types of repository organization patterns: "folder/"
+        and ".lang".
+
+        Parameters
+        ----------
+        file_name: string
+            Name of the file.
+
+        Returns
+        -------
+        basename: string
+            Name of the file content that remains unchanged among languages.
+
+        lang: string
+            Code of language used in the file.
+        """
+        base_name, lang = None, None
+        if self.pattern == "folder/":
+            for split in file_name.split("/"):
+                if split in self.all_langs:
+                    lang = split
+                    base_name = os.path.basename(file_name)
+                    break
+        elif self.pattern == ".lang":
+            lang = file_name.split(".")[-2]
+            assert lang in self.all_langs, "Invalid format of translation files"
+            base_name = file_name.replace("."+lang, "")
+        return base_name, lang
 
     def get_langs(self, commits):
         """
@@ -526,28 +534,28 @@ class GitReader:
                     langs.append(commits[base_file][file]["lang"])
             return set(langs)
 
-    def get_origins(self, commits):
+    def set_langs(self, commits):
         """
-        Parse through the commit dictionary and get all source files.
+        Parse through the commit dictionary and set all langs.
+        """
+        for basefile in commits:
+            files = commits[basefile]
+            for lang in self.get_langs(commits):
+                if lang not in files:
+                    files[lang] = {}
+        return commits
 
-        Returns
-        -------
-        origins: dictionary
-            Source files (the original version of content) organized by
-            {
-                "basename": {
-                    "name of the source file"
-                }
-            }
+    def set_origins(self, commits):
         """
-        origins = {}
+        Parse through the commit dictionary and set all source files.
+        """
         for base_file in commits:
             st = float("inf")
             origins[base_file] = None
             for file in commits[base_file]:
                 file_dict = commits[base_file][file]
                 if file_dict["ft"] < st:
-                    origins[base_file] = file
+                    commits[base_file]["origin"] = lang
                     st = file_dict["ft"]
                 elif file_dict["ft"] == st:
                     if file_dict["lang"] == self.src_lang:

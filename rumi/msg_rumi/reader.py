@@ -27,8 +27,8 @@ from rumi.base_reader import BaseReader
 
 class MsgReader(BaseReader):
     """
-    MsgReader reads the github history, parses it into a commit dictionary,
-    and also parses the source files and source and target languages.
+    MsgReader reads the github history and parses it into a message
+    dictionary of commit history. 
 
     Parameters
     ----------

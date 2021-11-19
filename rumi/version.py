@@ -33,6 +33,8 @@ class Version:
     ----------
     repo_name: string
         Name of the repository for translation monitoring.
+    which_rumi: string
+        "file" or "msg" rumi.
     """
 
     def __init__(self, repo_name) -> None:
