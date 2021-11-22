@@ -56,7 +56,7 @@ CLASSIFIERS  = [
 
 ## Important Paths
 PROJECT      = os.path.abspath(os.path.dirname(__file__))
-REQUIRE_PATH = "requirement/requirements.txt"
+REQUIRE_PATH = "requirements/requirements.txt"
 VERSION_PATH = os.path.join(PACKAGE, "version.py")
 
 ## Directories to ignore in find_packages
