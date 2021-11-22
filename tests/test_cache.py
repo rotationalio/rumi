@@ -1,11 +1,11 @@
-# rumi.test_version
-# Test the version manager for git history reader
+# rumi.test_cache
+# Test the cache manager for git history reader
 # 
 # Author: Tianshu Li
 # Created: Nov.19 2021
 
 """
-Test the version manager for git history reader
+Test the cache manager for git history reader
 """
 
 ##########################################################################
@@ -18,13 +18,13 @@ Test the version manager for git history reader
 
 
 ##########################################################################
-# Version Test Cases
+# Cache Test Cases
 ##########################################################################
 
 
-class TestVersion():
+class TestCache():
     """
-    Version Tests
+    Cache Tests
     """
 
     def test_get_latest(self):
