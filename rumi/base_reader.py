@@ -17,6 +17,8 @@ import os
 import git
 import glob
 
+from pathlib import Path
+
 
 ##########################################################################
 # Class BaseReader
@@ -30,7 +32,7 @@ class BaseReader():
 
     Parameters
     ----------
-    repo_path: string, default: ""
+    repo_path: string, default: "./"
         Path to the repository for translation monitoring.
     content_path: list of string, default: ["content/"]
         Path from the root of the repository to the directory that contains
@@ -42,15 +44,15 @@ class BaseReader():
         monitoring translation of the markdown files.
     """
     def __init__(
-        self, content_path, extension, repo_path="./", branch="main", 
+        self, content_path=None, extension=None, repo_path="./", branch="main", 
     ) -> None:
         """
         MsgReader reads the github history and parses it into a message
         dictionary of commit history. 
         """
+        content_path = content_path or ["content/"]
+        extension = extension or ["md"]
         self.repo_path = self.validate_repo_path(repo_path)
-        if not self.repo_path:
-            return
         self.branch = branch
         self.targets = self.init_targets(content_path, extension)
     
@@ -89,13 +91,38 @@ class BaseReader():
         target: set
             Set of target files for translation monitoring.
         """
+        # Resolve content directory to only walk it, otherwise walk entire repo
+        content_path = self.repo_path.joinpath(content_path) if content_path else self.repo_path
+        
         target = []
-        for file in self.get_current_repo_set():
-            if file.split(".")[-1] in extension:
-                for dir in content_path:
-                    if file.startswith(dir):
-                        target.append(file)
+        for root, dirs, files in os.walk(content_path.resolve(), topdown=True):
+                # Ignore hidden directories, e.g. things like .git or .github
+                # In the future we could also use an argument to ignore
+                # specific directories like node_modules (or use .rumignore)
+                dirs[:] = [d for d in dirs if not self.is_hidden(d)]
+                
+                # Convert the root to a Path for path operations 
+                root = Path(root)
+                
+                for fname in files:
+                        # Ignore hidden files
+                        if self.is_hidden(fname): continue
+                        
+                        # Create the Path from the file
+                        path = root.joinpath(fname)
+                        
+                        # Check the extension, note you may want to use the more complex
+                        # path.suffixes for multiple extensions e.g. myfile.en.md 
+                        if path.suffix in extension:
+                            target.append(path)
         return set(target)
+                
+    def is_hidden(basename):
+        """
+        Helper function that looks for a base path name that is hidden
+        by the operating system (either posix or windows).
+        """
+        return basename.startswith(".") or basename.startswith("~")
 
     def validate_repo_path(self, repo_path="./"):
         """
@@ -112,12 +139,9 @@ class BaseReader():
         repo_path: string
             Validated repository path.
         """
-        if os.path.isdir(repo_path):
-            if repo_path[-1] != "/":
-                repo_path = repo_path+"/"
-        else:
-            print("Please specify a valid repository path")
-            repo_path = None 
+        repo_path = Path(repo_path)
+        if (not repo_path.exists()) or (not repo_path.is_dir()):
+            raise Exception("please specify a valid repository path")
         return repo_path
 
     def get_repo(self):
