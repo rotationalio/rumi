@@ -31,7 +31,7 @@ from setuptools import find_packages
 with open("README.md", "r", encoding="utf-8") as fh:
     LONG_DESCRIPTION = fh.read()
 
-NAME         = "rumi"
+NAME         = "rumi-i18n"
 DESCRIPTION  = "A static site translation monitoring tool"
 AUTHOR       = "Tianshu Li"
 EMAIL        = "tianshu@rotational.io"
