@@ -13,10 +13,9 @@ Git history reader for message-based translation monitoring
 ##########################################################################
 
 
+import re
 import os
-import git
 
-from io import StringIO
 from datetime import datetime
 from rumi.base_reader import BaseReader
 
@@ -34,30 +33,119 @@ class MsgReader(BaseReader):
     Parameters
     ----------
     repo_path: string, default: "./"
-        Url for cloning the repository for translation monitoring.
-    content_path: list of string, default: ["content/"]
-        Path from the root of the repository to the directory that contains
-        contents that require translation. Default uses the "content/" folder.
+        Path to the repository for translation monitoring.
     branch: string, default: "main"
         Name of the branch to read the github history from. Default to "main".
-    extension: list of string, default: ["md"]
-        Extension of the target files for translation monitoring. Defult
-        monitoring translation of the markdown files.
-    src_lang: 
+    content_path: string, default: "content/"
+        Paths from the root of the repository to the directory that contains
+        contents for translation, joined by space, e.g., "content/ 
+        data/ i18n/". Default uses the "content/" folder.
+    extension: string, default: ".md"
+        Extensions of the target files for translation monitoring, joined by
+        space. Defult monitoring translation of the markdown files.
+    src_lang: string, default: "en"
+        Source language as set up with lingui.js.
     """
     def __init__(
-            self, content_path, extension, src_lang,
-            repo_path="./", branch="main"
+        self, repo_path="./", branch="main", 
+        content_path="content/", extension=".md", src_lang="en"
     ) -> None:
-        """
-        MsgReader reads the github history and parses it into a message
-        dictionary of commit history. 
-        """
+
         super().__init__(
             content_path=content_path, extension=extension, 
             repo_path=repo_path, branch=branch
         )
         self.src_lang = src_lang
+
+    def modify_commits(
+        self, commits, timestamp, fname, locale, msgid, content, status, kind
+    ):
+        """
+        Helper function to modify the commit dictionary while parsing history.
+
+        Parameters
+        ----------
+        commits: dictionary
+            Commit history datastructure.
+        timestamp: float
+            Float format of commit.authored_datetime.
+        fname: string
+            Target file name.
+        locale:
+            Target file language (locale).
+        msgid: string 
+            Id of the message to be translated.
+        content: string
+            Content of a msgid or msgstr (translation) to be added.
+        status: string
+            Status of the modification, can be "dep", "add", "del" or "same".
+        kind: string
+            Kind of the modification, can be "msgid" or "msgstr".
+        """
+
+        # Case when a message is deleted
+        # It's translation is marked as "deleted" in the datastructure
+        if kind == "msgid" and status == "del":
+            commits[content][locale]["history"].append((timestamp, '"deleted"'))
+            commits[content][locale]["lt"] = timestamp
+
+        # Case when a translation is added
+        elif kind == "msgstr" and status == "add":
+
+            # Parsing relies on one line of msgid before msgstr, will raise 
+            # exception if not
+            if not msgid:
+                raise Exception("Unable to parse file {}".format(fname))
+
+            # Add empty dict if msgid or locale has not been documented
+            if msgid not in commits:
+                commits[msgid] = {}
+            if locale not in commits[msgid]:
+                commits[msgid][locale] = {
+                    "filename": fname,
+                    "ft": timestamp,
+                    "lt": timestamp,
+                    "history": []
+                }
+            
+            commits[msgid][locale]["history"].append((timestamp, content))
+            commits[msgid][locale]["lt"] = timestamp
+        return commits
+    
+    def parse_line(self, line):
+        """
+        Helper function to parse one line from changes of the target file
+        while parsing git history.
+
+        Returns
+        -------
+        content: string
+            Content of msgid (source message) or msgstr (translation).
+        kind: string
+            Whether this line is "msgid" or "msgstr".
+        status: str
+            Whether this line is "dep", "add", "del", or "same". "dep" refers to
+            lingui.js's documentation of deprecated messages. 
+        """
+
+        if line.startswith("+msg"): status = "add"
+        elif line.startswith("-msg"): status = "del"
+        elif line.startswith(" msg"): status = "same"
+        
+        # lingui.js's deprecated messages begins with ~
+        elif re.match(r"^[+|-| ]~", line): status = "dep"
+
+        # Ignore other lines such as comments or file header
+        else:
+            return None, None, None
+        
+        splits = line.strip().split(" ")
+        
+        content = " ".join(splits[1:])
+        kind = re.sub(r"[^a-z]+", "", splits[0])
+
+        return content, status, kind
+
 
     def parse_history(self):
         """
@@ -81,90 +169,46 @@ class MsgReader(BaseReader):
             }
         """
         repo = self.get_repo()
-
+        # TODO: update with caching mechanism
         commits = {}
-        patterns  = {
-            "new_msg": "+msgid ",
-            "del_msg": "-msgid ",
-            "update_msg": " msgid ",
-            "new_trans": "+msgstr ",
-            "del_trans": "-msgstr ",
-            "dt": "Date:"
-        }
         
-        for tgt_file in self.targets:
-            tgt_lang = self.parse_lang(tgt_file)
-            command="git log -p --reverse {} ".format(tgt_file)
-            git_log = repo.git.execute(command=command, shell=True)
+        # Iterate through commits from the first to the last
+        history = list(repo.iter_commits())
+        history.reverse()
+        history.append(repo.head.commit)
 
-            for line in StringIO(git_log).readlines():                
-                # Date line
-                if line.startswith(patterns["dt"]):
-                    timestamp = self.parse_timestamp(line.replace(patterns["dt"], "").strip())
-                # When line starts with "+msgid ", save temp var msg
-                elif line.startswith(patterns["new_msg"]):
-                    msg = line.replace(patterns["new_msg"], "").strip()
-                    if not (msg in commits):
-                        commits[msg] = {
-                            tgt_lang: {
-                                "filename": tgt_file,
-                                "ft": timestamp,
-                                "lt": timestamp,
-                                "history": []
-                            }
-                        }
-                    else: 
-                        commits[msg][tgt_lang] = {
-                            "filename": tgt_file,
-                            "ft": timestamp,
-                            "lt": timestamp,
-                            "history": []
-                        }
-                # When line starts with " msgid ", save temp var msg
-                elif line.startswith(patterns["update_msg"]):
-                    msg = line.replace(patterns["update_msg"], "").strip()
-                    if not tgt_lang in commits[msg]:
-                        commits[msg][tgt_lang] = {
-                                "filename": tgt_file,
-                                "ft": timestamp,
-                                "lt": timestamp,
-                                "history": []
-                            }
-                # When line starts with "-msgid ", document the deletion, also
-                # save temp var msg incase msgstr is also deleted in next line
-                elif line.startswith(patterns["del_msg"]):
-                    msg = line.replace(patterns["del_msg"], "").strip()
-                    commits[msg][tgt_lang]["lt"] = timestamp
-                    commits[msg][tgt_lang]["history"].append((timestamp, '"deleted"'))
+        for idx, commit in enumerate(history[:-1]):
 
-                elif line.startswith(patterns["new_trans"]):
-                    trans = line.replace(patterns["new_trans"], "").strip()
-                    if msg == "":
-                        print("Unable to parse the git history")
-                    else:
-                        commits[msg][tgt_lang]["lt"] = timestamp
-                        commits[msg][tgt_lang]["history"].append((timestamp, trans))
-                        msg = ""
+            timestamp = float(datetime.timestamp(history[idx+1].authored_datetime))
 
-                elif line.startswith(patterns["del_trans"]):
-                    trans = line.replace(patterns["del_trans"], "").strip()
-                    if msg == "":
-                        print("Unable to parse the git history")
-                    else:
-                        # When msgid isn't deleted but msgstr is:
-                        if commits[msg][tgt_lang]["lt"] != timestamp:
-                            commits[msg][tgt_lang]["history"].append((timestamp, ""))
+            # Iterate through each diff item in the commit
+            # create_patch will create the block of actual diff lines
+            for item in commit.diff(history[idx+1], create_patch=True):
+
+                # Check if b_path (file name after this commit) is in targets
+                if item.b_path in self.targets:
+                    s = item.diff.decode("utf-8")
+
+                    lines = s.split("\n")
+
+                    for line in lines:
+                        content, status, kind = self.parse_line(line)
+
+                        # Ignore the lines without a content
+                        if not content:
+                            continue
+                        
+                        # Track msgid for next line
+                        if kind == "msgid": msgid = content
+                        
+                        # Put content into the datastructure
+                        fname =  item.b_path
+                        locale = self.parse_lang(item.b_path)
+                        commits = self.modify_commits(
+                            commits, timestamp, fname, locale, 
+                            msgid, content, status, kind
+                        )
         return commits
-
-    def parse_timestamp(self, s):
-        """
-        Parse timestamp in git log (e.g. Thu Nov 11 22:45:36 2021 +0800) into a 
-        float number of timestamp.
-        """
-        
-        dt = datetime.strptime(s, '%a %b %d %H:%M:%S %Y %z')
-        ts = float(datetime.timestamp(dt))
-        return ts
 
     def parse_lang(self, filename):
         """
