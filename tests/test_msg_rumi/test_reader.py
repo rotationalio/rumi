@@ -25,7 +25,7 @@ from rumi.msg_rumi.reader import MsgReader
 ##########################################################################
 
 
-class TestMsgReader():
+class TestMsgReader:
     def test_fixtures_msg_reader(self, tmpdir):
         """
         Generate fixture repo for testing MsgReader.
@@ -37,7 +37,7 @@ class TestMsgReader():
         # Git config needed for making commits
         repo.config_writer().set_value("user", "name", "testrumi").release()
         repo.config_writer().set_value("user", "email", "testrumiemail").release()
-        
+
         # Initial commit
         initial_file = repo_path / "initial_file.txt"
         initial_file.write_text("", encoding="utf8")
@@ -57,7 +57,7 @@ class TestMsgReader():
         fr_dir.mkdir()
         en_file = en_dir / "messages.po"
         fr_file = fr_dir / "messages.po"
-    
+
         # For testing new msg can be added and empty translation is set to ""
         en_content = '#Header line.\nmsgid "new msg"\nmsgstr "new msg"'
         fr_content = '#Header line.\nmsgid "new msg"\nmsgstr ""'
@@ -67,7 +67,7 @@ class TestMsgReader():
         repo.git.commit(m='new msg can be added and empty translation is set to ""')
         # Track this commit's timestamp
         ts1 = float(datetime.timestamp(repo.head.commit.authored_datetime))
-        
+
         # For testing new translation is added
         fr_content = '#Header line.\nmsgid "new msg"\nmsgstr "nouveau message"'
         fr_file.write_text(fr_content, encoding="utf8")
@@ -83,7 +83,7 @@ class TestMsgReader():
         repo.git.commit(m='deleted translation is set to ""')
         # Track this commit's timestamp
         ts3 = float(datetime.timestamp(repo.head.commit.authored_datetime))
-        
+
         # For testing deleted msg is set to "deleted"
         en_content = '#Header line.\n~msgid "new msg"\n~msgstr "new msg"'
         fr_content = '#Header line.\n~msgid "new msg"\n~msgstr ""'
@@ -101,30 +101,35 @@ class TestMsgReader():
         Assert git history is correctly parsed into a commit dictionary.
         """
         repo_path, ts = self.test_fixtures_msg_reader(tmpdir)
-        
+
         reader = MsgReader(
-            content_path="locales/", extension=".po", src_lang="en",
-            repo_path=repo_path, branch="test"
+            content_path="locales/",
+            extension=".po",
+            src_lang="en",
+            repo_path=repo_path,
+            branch="test",
         )
 
         got = reader.parse_history()
         want = {
             '"new msg"': {
-                'en': {
-                    'filename': 'locales/en/messages.po', 
-                    'ft': ts[0], 
-                    'lt': ts[3], 
-                    'history': [(ts[0], '"new msg"'), (ts[3], '"deleted"')]
-                }, 
-                'fr': {
-                    'filename': 'locales/fr/messages.po', 
-                    'ft': ts[0], 
-                    'lt': ts[3], 
-                    'history': [
-                        (ts[0], '""'), (ts[1], '"nouveau message"'), 
-                        (ts[2], '""'), (ts[3], '"deleted"')
-                    ]
-                }
+                "en": {
+                    "filename": "locales/en/messages.po",
+                    "ft": ts[0],
+                    "lt": ts[3],
+                    "history": [(ts[0], '"new msg"'), (ts[3], '"deleted"')],
+                },
+                "fr": {
+                    "filename": "locales/fr/messages.po",
+                    "ft": ts[0],
+                    "lt": ts[3],
+                    "history": [
+                        (ts[0], '""'),
+                        (ts[1], '"nouveau message"'),
+                        (ts[2], '""'),
+                        (ts[3], '"deleted"'),
+                    ],
+                },
             }
         }
         assert got == want
@@ -134,9 +139,7 @@ class TestMsgReader():
         Assert correct language is parsed from filename.
         """
         filename = "web/src/locales/en/messages.po"
-        reader = MsgReader(
-            content_path="locales/", extension=".po", src_lang="en"
-        )
+        reader = MsgReader(content_path="locales/", extension=".po", src_lang="en")
         lang = reader.parse_lang(filename)
 
         assert lang == "en"

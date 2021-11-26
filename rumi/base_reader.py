@@ -1,6 +1,6 @@
 # rumi.base_reader
 # Base git history reader for translation monitoring
-# 
+#
 # Author: Tianshu Li
 # Created: Nov.15 2021
 
@@ -24,9 +24,9 @@ from pathlib import Path
 ##########################################################################
 
 
-class BaseReader():
+class BaseReader:
     """
-    BaseReader access the repository and init target files for translation 
+    BaseReader access the repository and init target files for translation
     monitoring.
 
     Parameters
@@ -37,15 +37,19 @@ class BaseReader():
         Name of the branch to read the github history from. Default to "main".
     content_path: string, default: "content/"
         Paths from the root of the repository to the directory that contains
-        contents for translation, joined by space, e.g., "content/ 
+        contents for translation, joined by space, e.g., "content/
         data/ i18n/". Default uses the "content/" folder.
     extension: string, default: ".md"
         Extensions of the target files for translation monitoring, joined by
         space. Defult monitoring translation of the markdown files.
     """
+
     def __init__(
-        self, repo_path="./", branch="main", 
-        content_path="content/", extension=".md", 
+        self,
+        repo_path="./",
+        branch="main",
+        content_path="content/",
+        extension=".md",
     ) -> None:
         self.repo_path = self.validate_repo_path(repo_path)
         self.branch = branch
@@ -59,7 +63,7 @@ class BaseReader():
         ----------
         content_path: string, default: "content/"
             Paths from the root of the repository to the directory that contains
-            contents for translation, joined by space, e.g., "content/ 
+            contents for translation, joined by space, e.g., "content/
             data/ i18n/". Default uses the "content/" folder.
         extension: string, default: ".md"
             Extensions of the target files for translation monitoring, joined by
@@ -68,7 +72,7 @@ class BaseReader():
         Returns
         -------
         target: set
-            Set of target files (string of path from repo_path to target file) 
+            Set of target files (string of path from repo_path to target file)
             for translation monitoring.
         """
         target = []
@@ -76,29 +80,30 @@ class BaseReader():
         for cp in content_path:
             # Resolve content directory to only walk it
             cp = self.repo_path.joinpath(cp)
-            
+
             for root, dirs, files in os.walk(cp.resolve(), topdown=True):
                 # Ignore hidden directories, e.g. things like .git or .github
                 # In the future we could also use an argument to ignore
                 # specific directories like node_modules (or use .rumignore)
                 dirs[:] = [d for d in dirs if not self.is_hidden(d)]
 
-                # Convert the root to a Path for path operations 
+                # Convert the root to a Path for path operations
                 root = Path(root)
-                
+
                 for fname in files:
                     # Ignore hidden files
-                    if self.is_hidden(fname): continue
-                    
+                    if self.is_hidden(fname):
+                        continue
+
                     # Create the Path from the file relative to the repo_path
                     path = root.joinpath(fname).relative_to(self.repo_path)
-                    
+
                     # Check the extension, note you may want to use the more complex
-                    # path.suffixes for multiple extensions e.g. myfile.en.md 
+                    # path.suffixes for multiple extensions e.g. myfile.en.md
                     if path.suffix in extension:
                         target.append(str(path))
         return set(target)
-                
+
     def is_hidden(self, basename):
         """
         Helper function that looks for a base path name that is hidden
@@ -113,8 +118,8 @@ class BaseReader():
         for root, dirs, files in os.walk(self.repo_path.resolve(), topdown=True):
             # Ignore hidden directories, e.g. things like .git or .github
             dirs[:] = [d for d in dirs if not self.is_hidden(d)]
-            
-            # Convert the root to a Path for path operations 
+
+            # Convert the root to a Path for path operations
             root = Path(root)
 
             for fname in files:
@@ -146,7 +151,7 @@ class BaseReader():
         Parameters
         ----------
         repo_path: string, default: "./"
-            Path to the repository to monitor the translation status. 
+            Path to the repository to monitor the translation status.
 
         Returns
         -------
@@ -157,7 +162,7 @@ class BaseReader():
 
         if (not repo_path.exists()) or (not repo_path.is_dir()):
             raise Exception("Please specify a valid repository path")
-        
+
         return repo_path
 
     def get_repo(self):

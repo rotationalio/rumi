@@ -1,6 +1,6 @@
 # rumi.test_base_reader
 # Test the base git history reader
-# 
+#
 # Author: Tianshu Li
 # Created: Nov.15 2021
 
@@ -24,7 +24,7 @@ from rumi.base_reader import BaseReader
 ##########################################################################
 
 
-class TestBaseReader():
+class TestBaseReader:
     def test_fixtures_base_reader(self, tmpdir):
         """
         Generate fixture repo for testing BaseReader.
@@ -36,13 +36,13 @@ class TestBaseReader():
         # Git config needed for making commits
         repo.config_writer().set_value("user", "name", "testrumi").release()
         repo.config_writer().set_value("user", "email", "testrumiemail").release()
-        
+
         # Initial commit
         initial_file = repo_path / "initial_file.txt"
         initial_file.write_text("", encoding="utf8")
         repo.git.add(A=True)
         repo.git.commit(m="initial commit")
-        
+
         # Switch to test branch
         repo.git.branch("test")
         repo.git.checkout("test")
@@ -56,9 +56,9 @@ class TestBaseReader():
         # Add correct and wrong file extensions for testing init_targets
         files = [
             content_dir / "correct.c",
-            content_dir / "wrong.w", 
+            content_dir / "wrong.w",
             non_content_dir / "correct.c",
-            non_content_dir / "wrong.w"
+            non_content_dir / "wrong.w",
         ]
         for file in files:
             file.write_text("", encoding="utf8")
@@ -70,15 +70,17 @@ class TestBaseReader():
 
     def test_init_targets(self, tmpdir):
         """
-        Assert that files outside content_path or not with file extension is 
+        Assert that files outside content_path or not with file extension is
         not identified as target.
         """
         # Setup repository
         repo_name = self.test_fixtures_base_reader(tmpdir)
-        
+
         reader = BaseReader(
-            content_path="content", extension=".c",
-            repo_path=str(tmpdir / repo_name), branch="test"
+            content_path="content",
+            extension=".c",
+            repo_path=str(tmpdir / repo_name),
+            branch="test",
         )
 
         # Asserting only files in correct path with correct extension
@@ -91,8 +93,10 @@ class TestBaseReader():
         """
         with pytest.raises(Exception, match=r"Please specify a valid repository path"):
             reader = BaseReader(
-                content_path="content", extension=".c",
-                repo_path=str(tmpdir / "wrong_base_reader_repo"), branch="test"
+                content_path="content",
+                extension=".c",
+                repo_path=str(tmpdir / "wrong_base_reader_repo"),
+                branch="test",
             )
 
     def test_get_repo(self, tmpdir):
@@ -101,8 +105,10 @@ class TestBaseReader():
         """
         repo_name = self.test_fixtures_base_reader(tmpdir)
         reader = BaseReader(
-            content_path="content", extension=".c",
-            repo_path=str(tmpdir / repo_name), branch="test"
+            content_path="content",
+            extension=".c",
+            repo_path=str(tmpdir / repo_name),
+            branch="test",
         )
 
         repo = reader.get_repo()

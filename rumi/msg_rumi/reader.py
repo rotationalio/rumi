@@ -1,6 +1,6 @@
 # rumi.msg_rumi.reader
 # Git history reader for message-based translation monitoring
-# 
+#
 # Author: Tianshu Li
 # Created: Nov.15 2021
 
@@ -38,7 +38,7 @@ class MsgReader(BaseReader):
         Name of the branch to read the github history from. Default to "main".
     content_path: string, default: "content/"
         Paths from the root of the repository to the directory that contains
-        contents for translation, joined by space, e.g., "content/ 
+        contents for translation, joined by space, e.g., "content/
         data/ i18n/". Default uses the "content/" folder.
     extension: string, default: ".md"
         Extensions of the target files for translation monitoring, joined by
@@ -46,14 +46,21 @@ class MsgReader(BaseReader):
     src_lang: string, default: "en"
         Source language as set up with lingui.js.
     """
+
     def __init__(
-        self, repo_path="./", branch="main", 
-        content_path="content/", extension=".md", src_lang="en"
+        self,
+        repo_path="./",
+        branch="main",
+        content_path="content/",
+        extension=".md",
+        src_lang="en",
     ) -> None:
 
         super().__init__(
-            content_path=content_path, extension=extension, 
-            repo_path=repo_path, branch=branch
+            content_path=content_path,
+            extension=extension,
+            repo_path=repo_path,
+            branch=branch,
         )
         self.src_lang = src_lang
 
@@ -73,7 +80,7 @@ class MsgReader(BaseReader):
             Target file name.
         locale:
             Target file language (locale).
-        msgid: string 
+        msgid: string
             Id of the message to be translated.
         content: string
             Content of a msgid or msgstr (translation) to be added.
@@ -92,7 +99,7 @@ class MsgReader(BaseReader):
         # Case when a translation is added
         elif kind == "msgstr" and status == "add":
 
-            # Parsing relies on one line of msgid before msgstr, will raise 
+            # Parsing relies on one line of msgid before msgstr, will raise
             # exception if not
             if not msgid:
                 raise Exception("Unable to parse file {}".format(fname))
@@ -105,13 +112,13 @@ class MsgReader(BaseReader):
                     "filename": fname,
                     "ft": timestamp,
                     "lt": timestamp,
-                    "history": []
+                    "history": [],
                 }
-            
+
             commits[msgid][locale]["history"].append((timestamp, content))
             commits[msgid][locale]["lt"] = timestamp
         return commits
-    
+
     def parse_line(self, line):
         """
         Helper function to parse one line from changes of the target file
@@ -125,27 +132,30 @@ class MsgReader(BaseReader):
             Whether this line is "msgid" or "msgstr".
         status: str
             Whether this line is "dep", "add", "del", or "same". "dep" refers to
-            lingui.js's documentation of deprecated messages. 
+            lingui.js's documentation of deprecated messages.
         """
 
-        if line.startswith("+msg"): status = "add"
-        elif line.startswith("-msg"): status = "del"
-        elif line.startswith(" msg"): status = "same"
-        
+        if line.startswith("+msg"):
+            status = "add"
+        elif line.startswith("-msg"):
+            status = "del"
+        elif line.startswith(" msg"):
+            status = "same"
+
         # lingui.js's deprecated messages begins with ~
-        elif re.match(r"^[+|-| ]~", line): status = "dep"
+        elif re.match(r"^[+|-| ]~", line):
+            status = "dep"
 
         # Ignore other lines such as comments or file header
         else:
             return None, None, None
-        
+
         splits = line.strip().split(" ")
-        
+
         content = " ".join(splits[1:])
         kind = re.sub(r"[^a-z]+", "", splits[0])
 
         return content, status, kind
-
 
     def parse_history(self):
         """
@@ -171,7 +181,7 @@ class MsgReader(BaseReader):
         repo = self.get_repo()
         # TODO: update with caching mechanism
         commits = {}
-        
+
         # Iterate through commits from the first to the last
         history = list(repo.iter_commits())
         history.reverse()
@@ -179,11 +189,11 @@ class MsgReader(BaseReader):
 
         for idx, commit in enumerate(history[:-1]):
 
-            timestamp = float(datetime.timestamp(history[idx+1].authored_datetime))
+            timestamp = float(datetime.timestamp(history[idx + 1].authored_datetime))
 
             # Iterate through each diff item in the commit
             # create_patch will create the block of actual diff lines
-            for item in commit.diff(history[idx+1], create_patch=True):
+            for item in commit.diff(history[idx + 1], create_patch=True):
 
                 # Check if b_path (file name after this commit) is in targets
                 if item.b_path in self.targets:
@@ -197,16 +207,23 @@ class MsgReader(BaseReader):
                         # Ignore the lines without a content
                         if not content:
                             continue
-                        
+
                         # Track msgid for next line
-                        if kind == "msgid": msgid = content
-                        
+                        if kind == "msgid":
+                            msgid = content
+
                         # Put content into the datastructure
-                        fname =  item.b_path
+                        fname = item.b_path
                         locale = self.parse_lang(item.b_path)
                         commits = self.modify_commits(
-                            commits, timestamp, fname, locale, 
-                            msgid, content, status, kind
+                            commits,
+                            timestamp,
+                            fname,
+                            locale,
+                            msgid,
+                            content,
+                            status,
+                            kind,
                         )
         return commits
 

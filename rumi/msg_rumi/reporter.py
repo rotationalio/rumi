@@ -24,7 +24,7 @@ from tabulate import tabulate
 ##########################################################################
 
 
-class MsgReporter():
+class MsgReporter:
     """
     MsgReporter gets the translation needs from the react app repository
     set up with lingui.js, and report the needs in either stats mode, E.g.:
@@ -51,12 +51,12 @@ class MsgReporter():
         ----------------------------------------------------------------------
         en Open: 0
         ----------------------------------------------------------------------
-    
-    It also contains download_needs function to download translation needs 
+
+    It also contains download_needs function to download translation needs
     into a .txt file for each language; and a insert_done function that inserts
-    translated messages back into the po files. 
+    translated messages back into the po files.
     """
-        
+
     def get_stats(self, commits, src_lang):
         """
         Get the translation stats of Total (number of items to be translated),
@@ -84,8 +84,8 @@ class MsgReporter():
         stats: dictionary
             {
                 locale: {
-                    "total": int, 
-                    "open": int, 
+                    "total": int,
+                    "open": int,
                     "updated": int,
                     "completed": int
                 }
@@ -96,31 +96,34 @@ class MsgReporter():
         for msg in commits:
 
             src_lt = commits[msg][src_lang]["lt"]
-            
+
             for locale in commits[msg]:
-                
+
                 if not (locale in stats):
                     stats[locale] = {
-                        "total": 0, "open": 0, "updated": 0, "completed": 0
+                        "total": 0,
+                        "open": 0,
+                        "updated": 0,
+                        "completed": 0,
                     }
 
                 # Track locale total #messages
                 stats[locale]["total"] += 1
 
-                if locale == src_lang: 
+                if locale == src_lang:
                     continue
-                
+
                 # Determin status based on target message's last commit time
                 tgt_lt = commits[msg][locale]["lt"]
-                
+
                 if src_lt < tgt_lt:
                     stats[locale]["completed"] += 1
-                elif src_lt == tgt_lt: 
+                elif src_lt == tgt_lt:
                     # Initially lingui.js add in msgstr "" for all messages
                     stats[locale]["open"] += 1
                 else:
                     stats[locale]["updated"] += 1
-                
+
         return stats
 
     def get_details(self, commits, src_lang):
@@ -148,7 +151,7 @@ class MsgReporter():
         details: dictionary
             {
                 locale: {
-                    "open": int, 
+                    "open": int,
                     "msgs": list
                     "wc": int
                 }
@@ -163,20 +166,19 @@ class MsgReporter():
             for locale in commits[msg]:
 
                 if not (locale in details):
-                    details[locale] = {
-                        "open": 0, "msgs": [], "wc": 0
-                    }
+                    details[locale] = {"open": 0, "msgs": [], "wc": 0}
 
                 # Current message is the last item in its history
-                curr_msg = commits[msg][locale]["history"][-1][-1] 
+                curr_msg = commits[msg][locale]["history"][-1][-1]
 
                 tgt_lt = commits[msg][locale]["lt"]
                 if (
                     # Ignore deprecated messages
-                    (locale == src_lang and curr_msg != "deleted") or 
+                    (locale == src_lang and curr_msg != "deleted")
+                    or
                     # Case when initial msgstr "" is added by lingui.js
                     (locale != src_lang and src_lt == tgt_lt)
-                ): 
+                ):
                     details[locale]["open"] += 1
                     details[locale]["msgs"].append(msg)
                     details[locale]["wc"] += len(" ".split(msg))
@@ -193,8 +195,8 @@ class MsgReporter():
         stats: dictionary
             {
                 locale: {
-                    "total": int, 
-                    "open": int, 
+                    "total": int,
+                    "open": int,
                     "updated": int,
                     "completed": int
                 }
@@ -206,16 +208,18 @@ class MsgReporter():
 
             stat = stats[lang]
 
-            data.append([
-                lang, stat["total"], stat["open"], stat["updated"], stat["completed"]
-            ])
+            data.append(
+                [lang, stat["total"], stat["open"], stat["updated"], stat["completed"]]
+            )
 
-        print(tabulate(
-            data, 
-            headers=["Language", "Total", "Open", "Updated", "Completed"],
-            tablefmt="orgtbl"
-        ))
-    
+        print(
+            tabulate(
+                data,
+                headers=["Language", "Total", "Open", "Updated", "Completed"],
+                tablefmt="orgtbl",
+            )
+        )
+
     def details(self, details):
         """
         Print out the details of messages needing translations for each language
@@ -226,7 +230,7 @@ class MsgReporter():
         details: dictionary
             {
                 locale: {
-                    "open": int, 
+                    "open": int,
                     "msgs": list
                     "wc": int
                 }
@@ -236,7 +240,7 @@ class MsgReporter():
 
             detail = details[lang]
 
-            print("-"*70)
+            print("-" * 70)
             print(lang, "Open:", detail["wc"])
 
             if len(detail["msgs"]) > 0:
@@ -244,7 +248,7 @@ class MsgReporter():
                 fmt_msgs = ["\n".join(textwrap.wrap(s)) for s in detail["msgs"]]
                 print("\n".join(fmt_msgs))
 
-        print("-"*70)
+        print("-" * 70)
 
     def download_needs(self, details, lang, path="./"):
         """
@@ -256,7 +260,7 @@ class MsgReporter():
         details: dictionary
             {
                 locale: {
-                    "open": int, 
+                    "open": int,
                     "msgs": list
                     "wc": int
                 }
@@ -278,13 +282,13 @@ class MsgReporter():
             f.write(header)
 
             for msg in detail["msgs"]:
-                f.write("msgid "+msg+"\n")
+                f.write("msgid " + msg + "\n")
                 f.write('msgstr ""\n')
                 f.write("\n")
 
     def insert_translations(self, file, po_file):
         """
-        Combine new translations together with other translations in the po file 
+        Combine new translations together with other translations in the po file
         of a language and generate a new file locally.
 
         Parameters
@@ -297,7 +301,7 @@ class MsgReporter():
         # Readin msgid and msgstr to be inserted
         insert = {}
 
-        with open (file, "r+") as f_insert:
+        with open(file, "r+") as f_insert:
 
             for line in f_insert.readlines():
 
@@ -313,27 +317,27 @@ class MsgReporter():
 
         # Combine old and insert translations and write to a new file
         new_file = os.path.join(
-            os.path.dirname(file), "inserted_"+os.path.basename(file)
+            os.path.dirname(file), "inserted_" + os.path.basename(file)
         )
         f_new = open(new_file, "w+")
 
         with open(po_file, "r+") as f_old:
-            
+
             for line in f_old.readlines():
-                
+
                 # Write line of msgid as is and track msgid
                 if line.startswith("msgid "):
                     msgid = line.strip().replace("msgid ", "")
                     f_new.write(line)
-                
+
                 # Search for msgstr in insert, if none, write old msgstr
                 elif line.startswith("msgstr "):
                     if msgid in insert:
                         msgstr = insert[msgid]
-                        f_new.write("msgstr "+msgstr+"\n")
+                        f_new.write("msgstr " + msgstr + "\n")
                     else:
                         f_new.write(line)
                 else:
                     f_new.write(line)
-        
+
         f_new.close()
