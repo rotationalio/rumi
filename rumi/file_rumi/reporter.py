@@ -18,7 +18,7 @@ import argparse
 
 from tabulate import tabulate
 
-from reader import GitReader
+from rumi.file_rumi.reader import GitReader
 
 
 ##########################################################################
@@ -26,12 +26,12 @@ from reader import GitReader
 ##########################################################################
 
 
-class StatusReporter():
+class StatusReporter:
     """
-    The StatusReporter can display the translation status of the static 
+    The StatusReporter can display the translation status of the static
     site repository in two modes:
-    1. stats mode: displays the number of Open (hasn't been translated), 
-    Updated (source file has been updated after translation), Completed 
+    1. stats mode: displays the number of Open (hasn't been translated),
+    Updated (source file has been updated after translation), Completed
     (source file has been translated for all target languages). E.g.:
         | Language   |   Origin |   Open |   Updated |   Completed |
         |------------+----------+--------+-----------+-------------|
@@ -45,23 +45,24 @@ class StatusReporter():
         | filename1        | Update   | en                | zh                | ?            |
         | filename2        | Open     | en                | fr                | 404          |
         | filename2        | Open     | en                | zh                | 404          |
-    
+
     Parameters
     ----------
     repo_path: string, default: "./"
         Path to the repository to monitory the translation status. Default
-        uses the current path. 
-    
+        uses the current path.
+
     src_lang: string, default: ""
-        Language code of the source language (the original language of 
-        contents) to be monitored. If not specified, all source language 
+        Language code of the source language (the original language of
+        contents) to be monitored. If not specified, all source language
         will be monitored.
-    
+
     tgt_lang: string, default: ""
         Language code of the target language (language to translate contents
-        into) to be monitored. If not specified, all target language will 
+        into) to be monitored. If not specified, all target language will
         be monitored.
     """
+
     def __init__(self, repo_path="./", src_lang="", tgt_lang=""):
         self.repo_path = repo_path
         self.src_lang = src_lang
@@ -70,11 +71,11 @@ class StatusReporter():
     def get_num_origin(self, commits, origins, langs):
         """
         Count number of origin files in each language
-        
+
         Parameters
         ----------
         commits: dictionary
-            Commit history of the repository organized by 
+            Commit history of the repository organized by
             {
                 "basename": {
                     "filename": {
@@ -89,7 +90,7 @@ class StatusReporter():
             }
             The basename is the name of the content that is common among languages.
         origins: dictionary
-            Source files (the original version of content) organized by 
+            Source files (the original version of content) organized by
             {
                 "basename": {
                     "name of the source file"
@@ -97,11 +98,11 @@ class StatusReporter():
             }
         langs: set
             Set of all language codes contained and monitored in the repository.
-        
+
         Returns
         -------
         cnt: dictionary
-            Count of source files for each language organized by 
+            Count of source files for each language organized by
             {
                 "language code": number of source files
             }
@@ -116,21 +117,21 @@ class StatusReporter():
     def get_status(self, commits, origins, langs):
         """
         Count number of source files that are Open, Updated, Completed
-        
+
         Returns
         -------
         complete: dictionary
-            Count of source files in Complete status organized by 
+            Count of source files in Complete status organized by
             {
                 "language code": number of completed source files
             }
         update: dictionary
-            Count of source files in Update status organized by 
+            Count of source files in Update status organized by
             {
                 "language code": number of updated source files
             }
         open: dictionary
-            Count of source files in Open status organized by 
+            Count of source files in Open status organized by
             {
                 "language code": number of open source files
             }
@@ -146,7 +147,17 @@ class StatusReporter():
             for file in files:
                 if file != origin:
                     if files[file]["lt"] >= files[origin]["lt"]:
-                        remain -= 1
+                        # When source and target file were changed in the same
+                        # commit but source file has more additions, the status
+                        # is also marked as updated.
+                        if (
+                            files[file]["lt"] == files[origin]["lt"]
+                            and files[file]["history"][files[origin]["lt"]][0]
+                            < files[origin]["history"][files[origin]["lt"]][0]
+                        ):
+                            updated = True
+                        else:
+                            remain -= 1
                     else:
                         updated = True
             if remain == 1:
@@ -165,31 +176,31 @@ class StatusReporter():
         origin = self.get_num_origin(commits, origins, langs)
         data = []
         for lang in langs:
-            data.append(
-                [lang, origin[lang], open[lang], update[lang], complete[lang]]
+            data.append([lang, origin[lang], open[lang], update[lang], complete[lang]])
+        print(
+            tabulate(
+                data,
+                headers=["Language", "Origin", "Open", "Updated", "Completed"],
+                tablefmt="orgtbl",
             )
-        print(tabulate(
-            data, 
-            headers=["Language", "Origin", "Open", "Updated", "Completed"], 
-            tablefmt='orgtbl'
-        ))
+        )
 
     def word_count(self, file):
         """
         Estimate the word count of a given file.
-        
+
         Parameters
         ----------
         file: string
             Name of the file.
-        
+
         Returns
         -------
         wc: int
             Estimation of word count.
         """
         wc = 0
-        with open(self.repo_path+file, "r+") as f:
+        with open(self.repo_path + file, "r+") as f:
             for line in f:
                 wc += len(line.split(" "))
         return wc
@@ -202,13 +213,13 @@ class StatusReporter():
         ----------
         file: string
             Name of the file.
-        
+
         Returns
         -------
         cnt: int
             Number of lines
         """
-        with open(self.repo_path+file, "r+") as f:
+        with open(self.repo_path + file, "r+") as f:
             cnt = len(f.readlines())
         return cnt
 
@@ -220,14 +231,14 @@ class StatusReporter():
         Parameters
         ----------
         history: dictionary
-            Git history of a file parsed by GitReader: 
+            Git history of a file parsed by GitReader:
             {
                 timestamp: [#additions, #deletions]
             }
 
         timestamp: float
             Provided timestamp in time.time() format.
-        
+
         Returns
         -------
         cnt: int
@@ -258,91 +269,150 @@ class StatusReporter():
             for file in files:
                 if file != origin:
                     target_lang = files[file]["lang"]
-                    if files[file]["lt"] < files[origin]["lt"]:
-                        update_tgt_lang.append(target_lang)
+                    src_lt = files[origin]["lt"]
+                    tgt_lt = files[file]["lt"]
 
-                        # Count all additions in the origin file after current file's last update timestamp
-                        update_lines = self.count_additions(files[origin]["history"], files[file]["lt"])
-                        pct = str(round(update_lines/total_lines, 3) * 100)+"%"
-                        
-                        if (
-                            (self.src_lang=="" or self.src_lang==src_lang) and 
-                            (self.tgt_lang=="" or self.tgt_lang==target_lang)
+                    def append_update():
+                        update_tgt_lang.append(target_lang)
+                        pct = str(round(update_lines / total_lines, 3) * 100) + "%"
+                        if (self.src_lang == "" or self.src_lang == src_lang) and (
+                            self.tgt_lang == "" or self.tgt_lang == target_lang
                         ):
-                            data.append([origin, "Update", src_lang, target_lang, "?", pct])
+                            data.append(
+                                [origin, "Update", src_lang, target_lang, "?", pct]
+                            )
+
+                    if tgt_lt < src_lt:
+                        # Count all additions in the origin file after current file's last update timestamp
+                        update_lines = self.count_additions(
+                            files[origin]["history"], tgt_lt
+                        )
+                        append_update()
+                    # When source and target file were changed in the same
+                    # commit but source file has more additions, the status
+                    # is also marked as updated.
+                    elif tgt_lt == src_lt:
+                        src_add = files[origin]["history"][files[origin]["lt"]][0]
+                        tgt_add = files[file]["history"][files[origin]["lt"]][0]
+                        if src_add > tgt_add:
+                            update_lines = src_add - tgt_add
+                            append_update()
+                        else:
+                            complete_tgt_lang.append(target_lang)
                     else:
                         complete_tgt_lang.append(target_lang)
 
             # Target languages in Open status is not yet included in the commit history
             open_target_lang = [
-                lang for lang in langs 
-                if lang not in update_tgt_lang and lang not in complete_tgt_lang and lang != src_lang
+                lang
+                for lang in langs
+                if lang not in update_tgt_lang
+                and lang not in complete_tgt_lang
+                and lang != src_lang
             ]
             for target_lang in open_target_lang:
-                if (
-                    (self.src_lang=="" or self.src_lang==src_lang) and 
-                    (self.tgt_lang=="" or self.tgt_lang==target_lang)
+                if (self.src_lang == "" or self.src_lang == src_lang) and (
+                    self.tgt_lang == "" or self.tgt_lang == target_lang
                 ):
-                    data.append([origin, "Open", src_lang, target_lang, self.word_count(file), "100%"])
+                    data.append(
+                        [
+                            origin,
+                            "Open",
+                            src_lang,
+                            target_lang,
+                            self.word_count(file),
+                            "100%",
+                        ]
+                    )
 
         # Print detail data in tabulate format
-        print(tabulate(
-            data, 
-            headers=["File", "Status", "Source Language", "Target Language", "Word Count", "Percent Change"],
-            tablefmt='orgtbl'
-        ))
+        print(
+            tabulate(
+                data,
+                headers=[
+                    "File",
+                    "Status",
+                    "Source Language",
+                    "Target Language",
+                    "Word Count",
+                    "Percent Change",
+                ],
+                tablefmt="orgtbl",
+            )
+        )
 
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     group = parser.add_mutually_exclusive_group(required=True)
     group.add_argument(
-        '--repo_url', type=str, default="", 
-        help='Please specify the url of the repository for translation monitoring'
+        "--repo_url",
+        type=str,
+        default="",
+        help="Please specify the url of the repository for translation monitoring",
     )
     group.add_argument(
-        '--repo_path', type=str, default="",
-        help='Please specify the path to the repository'
+        "--repo_path",
+        type=str,
+        default="",
+        help="Please specify the path to the repository",
     )
     parser.add_argument(
-        '--content_path', nargs="+", type=str, default=["content/"], 
-        help='Please specify the path from the root of repository to the content to be translated'
+        "--content_path",
+        nargs="+",
+        type=str,
+        default=["content/"],
+        help="Please specify the path from the root of repository to the content to be translated",
     )
     parser.add_argument(
-        '--branch', type=str, default="main", 
-        help='Please specify the name of branch to fetch the .git history'
+        "--branch",
+        type=str,
+        default="main",
+        help="Please specify the name of branch to fetch the .git history",
     )
     parser.add_argument(
-        '--file_ext', nargs="+", default=['md'], 
-        help='Please specify the file extension of the translation files'
+        "--file_ext",
+        nargs="+",
+        default=["md"],
+        help="Please specify the file extension of the translation files",
     )
     parser.add_argument(
-        '--pattern', type=str, choices=["folder/", ".lang"], required=True,
-        help='Please specify the pattern of how the translation files are organized'
+        "--pattern",
+        type=str,
+        choices=["folder/", ".lang"],
+        required=True,
+        help="Please specify the pattern of how the translation files are organized",
     )
     parser.add_argument(
-        '--langs', type=str, required=False, default="",
-        help='Target languages to monitor for translation, e.g. "en zh ja" '
+        "--langs",
+        type=str,
+        required=False,
+        default="",
+        help='Target languages to monitor for translation, e.g. "en zh ja" ',
     )
 
     parser.add_argument(
-        '--detail_src_lang', type=str, default="",
-        help='Specify a source language to display the translation details'
+        "--detail_src_lang",
+        type=str,
+        default="",
+        help="Specify a source language to display the translation details",
     )
     parser.add_argument(
-        '--detail_tgt_lang', type=str, default="",
-        help='Specify the target language to display the translation details'
+        "--detail_tgt_lang",
+        type=str,
+        default="",
+        help="Specify the target language to display the translation details",
     )
 
     config = parser.parse_args()
     reader = GitReader(
         repo_url=config.repo_url,
         repo_path=config.repo_path,
-        content_path=config.content_path, 
-        branch=config.branch, 
-        file_ext=config.file_ext, 
+        content_path=config.content_path,
+        branch=config.branch,
+        file_ext=config.file_ext,
         pattern=config.pattern,
-        langs=config.langs
+        langs=config.langs,
     )
 
     commits = reader.parse_commits()
@@ -350,9 +420,9 @@ if __name__ == "__main__":
     langs = reader.get_langs(commits)
 
     reporter = StatusReporter(
-        repo_path=reader.repo_path, 
-        src_lang=config.detail_src_lang, 
-        tgt_lang=config.detail_tgt_lang
+        repo_path=reader.repo_path,
+        src_lang=config.detail_src_lang,
+        tgt_lang=config.detail_tgt_lang,
     )
     reporter.stats(commits, origins, langs)
     reporter.detail(commits, origins, langs)
