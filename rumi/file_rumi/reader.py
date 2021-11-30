@@ -27,20 +27,190 @@ from version import Version
 
 # Language Codes
 ALL_LANGS = {
-    "aa","ab","ae","af","ak","am","an","ar","as","av","ay","az","ba","be",
-    "bg","bh","bm","bi","bn","bo","br","bs","ca","ce","ch","co","cr","cs",
-    "cu","cv","cy","da","de","dv","dz","ee","el","en","eo","es","et","eu",
-    "fa","ff","fi","fj","fo","fr","fy","ga","gd","gl","gn","gu","gv","ha",
-    "he","hi","ho","hr","ht","hu","hy","hz","ia","id","ie","ig","ii","ik",
-    "io","is","it","iu","ja","jv","ka","kg","ki","kj","kk","kl","km","kn",
-    "ko","kr","ks","ku","kv","kw","ky","la","lb","lg","li","ln","lo","lt",
-    "lu","lv","mg","mh","mi","mk","ml","mn","mr","ms","mt","my","na","nb",
-    "nd","ne","ng","nl","nn","no","nr","nv","ny","oc","oj","om","or","os",
-    "pa","pi","pl","ps","pt","qu","rm","rn","ro","ru","rw","sa","sc","sd",
-    "se","sg","si","sk","sl","sm","sn","so","sq","sr","ss","st","su","sv",
-    "sw","ta","te","tg","th","ti","tk","tl","tn","to","tr","ts","tt","tw",
-    "ty","ug","uk","ur","uz","ve","vi","vo","wa","wo","xh","yi","yo","za",
-    "zh","zu"
+    "aa",
+    "ab",
+    "ae",
+    "af",
+    "ak",
+    "am",
+    "an",
+    "ar",
+    "as",
+    "av",
+    "ay",
+    "az",
+    "ba",
+    "be",
+    "bg",
+    "bh",
+    "bm",
+    "bi",
+    "bn",
+    "bo",
+    "br",
+    "bs",
+    "ca",
+    "ce",
+    "ch",
+    "co",
+    "cr",
+    "cs",
+    "cu",
+    "cv",
+    "cy",
+    "da",
+    "de",
+    "dv",
+    "dz",
+    "ee",
+    "el",
+    "en",
+    "eo",
+    "es",
+    "et",
+    "eu",
+    "fa",
+    "ff",
+    "fi",
+    "fj",
+    "fo",
+    "fr",
+    "fy",
+    "ga",
+    "gd",
+    "gl",
+    "gn",
+    "gu",
+    "gv",
+    "ha",
+    "he",
+    "hi",
+    "ho",
+    "hr",
+    "ht",
+    "hu",
+    "hy",
+    "hz",
+    "ia",
+    "id",
+    "ie",
+    "ig",
+    "ii",
+    "ik",
+    "io",
+    "is",
+    "it",
+    "iu",
+    "ja",
+    "jv",
+    "ka",
+    "kg",
+    "ki",
+    "kj",
+    "kk",
+    "kl",
+    "km",
+    "kn",
+    "ko",
+    "kr",
+    "ks",
+    "ku",
+    "kv",
+    "kw",
+    "ky",
+    "la",
+    "lb",
+    "lg",
+    "li",
+    "ln",
+    "lo",
+    "lt",
+    "lu",
+    "lv",
+    "mg",
+    "mh",
+    "mi",
+    "mk",
+    "ml",
+    "mn",
+    "mr",
+    "ms",
+    "mt",
+    "my",
+    "na",
+    "nb",
+    "nd",
+    "ne",
+    "ng",
+    "nl",
+    "nn",
+    "no",
+    "nr",
+    "nv",
+    "ny",
+    "oc",
+    "oj",
+    "om",
+    "or",
+    "os",
+    "pa",
+    "pi",
+    "pl",
+    "ps",
+    "pt",
+    "qu",
+    "rm",
+    "rn",
+    "ro",
+    "ru",
+    "rw",
+    "sa",
+    "sc",
+    "sd",
+    "se",
+    "sg",
+    "si",
+    "sk",
+    "sl",
+    "sm",
+    "sn",
+    "so",
+    "sq",
+    "sr",
+    "ss",
+    "st",
+    "su",
+    "sv",
+    "sw",
+    "ta",
+    "te",
+    "tg",
+    "th",
+    "ti",
+    "tk",
+    "tl",
+    "tn",
+    "to",
+    "tr",
+    "ts",
+    "tt",
+    "tw",
+    "ty",
+    "ug",
+    "uk",
+    "ur",
+    "uz",
+    "ve",
+    "vi",
+    "vo",
+    "wa",
+    "wo",
+    "xh",
+    "yi",
+    "yo",
+    "za",
+    "zh",
+    "zu",
 }
 
 
@@ -49,7 +219,7 @@ ALL_LANGS = {
 ##########################################################################
 
 
-class GitReader():
+class GitReader:
     """
     GitReader reads the github history, parses it into a commit dictionary,
     and also parses the source files and source and target languages.
@@ -82,18 +252,25 @@ class GitReader():
     all_lang: set
         Set of all language codes.
     """
+
     def __init__(
-        self, repo_url="", repo_path="", branch="main", langs="",
-        content_path=["content/"], file_ext=["md"], pattern="folder/",
-        src_lang = "en"
+        self,
+        repo_url="",
+        repo_path="",
+        branch="main",
+        langs="",
+        content_path=["content/"],
+        file_ext=["md"],
+        pattern="folder/",
+        src_lang="en",
     ):
         message = "Please provide either a remote repository url or the path to a local repository"
-        assert not (repo_url!="" and repo_path!=""), message
+        assert not (repo_url != "" and repo_path != ""), message
 
         self.repo_url = repo_url
         if repo_url != "":
             self.repo_name = os.path.basename(repo_url).replace(".git", "")
-            self.repo_path = self.repo_name+"/"
+            self.repo_path = self.repo_name + "/"
         else:
             self.validate_repo(repo_path)
         self.branch = branch
@@ -112,10 +289,12 @@ class GitReader():
 
     def get_current_repo(self):
         # Files that have been deleted are not monitored
-        repo_set = set([
-            file.replace(self.repo_path, "")
-            for file in glob.glob(self.repo_path+"**/*.*", recursive=True)
-        ])
+        repo_set = set(
+            [
+                file.replace(self.repo_path, "")
+                for file in glob.glob(self.repo_path + "**/*.*", recursive=True)
+            ]
+        )
         return repo_set
 
     def validate_repo(self, repo_path):
@@ -131,7 +310,7 @@ class GitReader():
         """
         if os.path.isdir(repo_path):
             if repo_path[-1] != "/":
-                self.repo_path = repo_path+"/"
+                self.repo_path = repo_path + "/"
             else:
                 self.repo_path = repo_path
             self.repo_name = os.path.basename(os.path.dirname(self.repo_path))
@@ -164,17 +343,20 @@ class GitReader():
         """
         repo = self.get_repo()
 
-        command = 'git log --numstat --pretty=format:"\t\t\t%h\t%at\t%aN" --since="{}"'.format(start_time)
+        command = 'git log --numstat --pretty=format:"\t\t\t%h\t%at\t%aN" --since="{}"'.format(
+            start_time
+        )
         git_log = repo.git.execute(command=command, shell=True)
 
         commits_raw = pd.read_csv(
             StringIO(git_log),
             sep="\t",
             header=None,
-            names=['additions', 'deletions', 'filename', 'sha', 'timestamp', 'author']
+            names=["additions", "deletions", "filename", "sha", "timestamp", "author"],
         )
-        commits = commits_raw[['additions', 'deletions', 'filename']]\
-            .join(commits_raw[['sha', 'timestamp', 'author']].fillna(method='ffill'))
+        commits = commits_raw[["additions", "deletions", "filename"]].join(
+            commits_raw[["sha", "timestamp", "author"]].fillna(method="ffill")
+        )
         commits = commits.dropna()
         return commits
 
@@ -207,7 +389,7 @@ class GitReader():
         elif self.pattern == ".lang":
             lang = file_name.split(".")[-2]
             assert lang in self.all_langs, "Invalid format of translation files"
-            base_name = file_name.replace("."+lang, "")
+            base_name = file_name.replace("." + lang, "")
         return base_name, lang
 
     def add_target(self, filename):
@@ -261,7 +443,12 @@ class GitReader():
         """
         commits = self.read_history(self.version.latest_date)
 
-        repo_set = set([file.replace(self.repo_path, "") for file in glob.glob(self.repo_path+"**/*.*", recursive=True)])
+        repo_set = set(
+            [
+                file.replace(self.repo_path, "")
+                for file in glob.glob(self.repo_path + "**/*.*", recursive=True)
+            ]
+        )
 
         file_dict = self.version.load_cache()
 
@@ -273,11 +460,13 @@ class GitReader():
             delete = 0 if delete == "-" else int(delete)
 
             # Clean out the { *** => ***} format in file name
-            path_hack = re.search(r'\{.+\}', file_name)
+            path_hack = re.search(r"\{.+\}", file_name)
             rename_sign = " => "
             if path_hack:
                 path_hack = path_hack.group()
-                file_name = file_name.replace(path_hack, path_hack[1:-1].split("=>")[-1].strip())
+                file_name = file_name.replace(
+                    path_hack, path_hack[1:-1].split("=>")[-1].strip()
+                )
             elif rename_sign in file_name:
                 rename = file_name.split(rename_sign)[-1]
                 file_name = rename
@@ -287,7 +476,7 @@ class GitReader():
                     continue
                 commit_time = float(commits.loc[i, "timestamp"])
 
-                if (base_name not in file_dict):
+                if base_name not in file_dict:
                     file_dict[base_name] = {}
 
                 if file_name in file_dict[base_name]:
@@ -296,15 +485,16 @@ class GitReader():
                     elif commit_time > file_dict[base_name][file_name]["lt"]:
                         file_dict[base_name][file_name]["lt"] = commit_time
 
-                    file_dict[base_name][file_name]["history"][commit_time] = [add, delete]
+                    file_dict[base_name][file_name]["history"][commit_time] = [
+                        add,
+                        delete,
+                    ]
                 else:
                     file_dict[base_name][file_name] = {
                         "lang": lang,
                         "ft": commit_time,
                         "lt": commit_time,
-                        "history": {
-                            commit_time: [add, delete]
-                        }
+                        "history": {commit_time: [add, delete]},
                     }
 
         self.version.write_cache(file_dict)
@@ -325,7 +515,9 @@ class GitReader():
         if self.langs != "":
             # Verify the specified language string is valid
             allowed = set(string.ascii_lowercase + string.whitespace)
-            assert set(self.langs) <= allowed, "Invalid languages specified. Only lowercase letters and whitespace are allowed"
+            assert (
+                set(self.langs) <= allowed
+            ), "Invalid languages specified. Only lowercase letters and whitespace are allowed"
             return set(self.langs.split(" "))
         else:
             langs = []
@@ -350,7 +542,7 @@ class GitReader():
         """
         origins = {}
         for base_file in commits:
-            st = float('inf')
+            st = float("inf")
             origins[base_file] = None
             for file in commits[base_file]:
                 file_dict = commits[base_file][file]
@@ -367,32 +559,48 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     group = parser.add_mutually_exclusive_group(required=True)
     group.add_argument(
-        '--repo_url', type=str, default="",
-        help='Please specify the url of the repository for translation monitoring'
+        "--repo_url",
+        type=str,
+        default="",
+        help="Please specify the url of the repository for translation monitoring",
     )
     group.add_argument(
-        '--repo_path', type=str, default="",
-        help='Please specify the path to the repository'
+        "--repo_path",
+        type=str,
+        default="",
+        help="Please specify the path to the repository",
     )
     parser.add_argument(
-        '--content_path', nargs="+", default=["content/"],
-        help='Please specify the path from the root of repository to the content to be translated'
+        "--content_path",
+        nargs="+",
+        default=["content/"],
+        help="Please specify the path from the root of repository to the content to be translated",
     )
     parser.add_argument(
-        '--branch', type=str, default="main",
-        help='Please specify the name of branch to fetch the .git history'
+        "--branch",
+        type=str,
+        default="main",
+        help="Please specify the name of branch to fetch the .git history",
     )
     parser.add_argument(
-        '--file_ext', nargs="+", default=['md'],
-        help='Please specify the file extension of the translation files'
+        "--file_ext",
+        nargs="+",
+        default=["md"],
+        help="Please specify the file extension of the translation files",
     )
     parser.add_argument(
-        '--pattern', type=str, choices=["folder/", ".lang"], required=True,
-        help='Please specify the pattern of how the translation files are organized'
+        "--pattern",
+        type=str,
+        choices=["folder/", ".lang"],
+        required=True,
+        help="Please specify the pattern of how the translation files are organized",
     )
     parser.add_argument(
-        '--langs', type=str, required=False, default="",
-        help='Target languages to monitor for translation, e.g. "en zh ja" '
+        "--langs",
+        type=str,
+        required=False,
+        default="",
+        help='Target languages to monitor for translation, e.g. "en zh ja" ',
     )
 
     config = parser.parse_args()
@@ -403,7 +611,7 @@ if __name__ == "__main__":
         branch=config.branch,
         file_ext=config.file_ext,
         pattern=config.pattern,
-        langs=config.langs
+        langs=config.langs,
     )
 
     commits = reader.parse_commits()
