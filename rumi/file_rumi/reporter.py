@@ -1,11 +1,11 @@
-# rumi.reporter
-# Translation status reporter based on commit history from git
+# rumi.file_rumi.reporter
+# Reporter for file-based translation monitoring
 #
 # Author: Tianshu Li
 # Created: Oct.22 2021
 
 """
-Translation status reporter based on commit history from git
+Reporter for file-based translation monitoring
 """
 
 ##########################################################################
@@ -13,42 +13,38 @@ Translation status reporter based on commit history from git
 ##########################################################################
 
 
-import os
-import argparse
-
+from pathlib import Path
 from tabulate import tabulate
 
-from rumi.file_rumi.reader import GitReader
-
 
 ##########################################################################
-# Class StatusReporter
+# Class FileReporter
 ##########################################################################
 
 
-class StatusReporter:
+class FileReporter:
     """
-    The StatusReporter can display the translation status of the static
+    The FileReporter can display the file-based translation status of the static
     site repository in two modes:
     1. stats mode: displays the number of Open (hasn't been translated),
     Updated (source file has been updated after translation), Completed
     (source file has been translated for all target languages). E.g.:
-        | Language   |   Origin |   Open |   Updated |   Completed |
-        |------------+----------+--------+-----------+-------------|
-        | fr         |        0 |      0 |         0 |           0 |
-        | en         |       17 |     12 |         1 |           4 |
-        | zh         |        0 |      0 |         0 |           0 |
-    2. detail mode: displays translation work required for each source file
+        | Target Language    |   Total  |   Open |   Updated |   Completed |
+        |--------------------+----------+--------+-----------+-------------|
+        | fr                 |        0 |      0 |         0 |           0 |
+        | en                 |       17 |     12 |         1 |           4 |
+        | zh                 |        0 |      0 |         0 |           0 |
+    2. detail mode: displays translation work required for each target file
     together with the word count. E.g.:
-        | File             | Status   | Source Language   | Target Language   | Word Count   |
-        |------------------+----------+-------------------+-------------------+--------------|
-        | filename1        | Update   | en                | zh                | ?            |
-        | filename2        | Open     | en                | fr                | 404          |
-        | filename2        | Open     | en                | zh                | 404          |
+        | File    | Status    | Source Language | Word Count | Target Language | Percent Completed | Percent Updated |
+        |---------+-----------+-----------------+------------+-----------------+-------------------+-----------------|
+        | file.md | completed | fr              |          4 | en              | 100.0%            | 0%              |
+        | file.md | updated   | fr              |          4 | zh              | 50.0%             | 50.0%           |
+        | file.md | open      | fr              |          4 | ja              | 0%                | 100.0%          |
 
     Parameters
     ----------
-    repo_path: string, default: "./"
+    repo_path: string or Path object, default: "./"
         Path to the repository to monitory the translation status. Default
         uses the current path.
 
@@ -64,123 +60,193 @@ class StatusReporter:
     """
 
     def __init__(self, repo_path="./", src_lang="", tgt_lang=""):
-        self.repo_path = repo_path
+        self.repo_path = Path(repo_path)
         self.src_lang = src_lang
         self.tgt_lang = tgt_lang
 
-    def get_num_origin(self, commits, origins, langs):
+    def get_stats(self, commits):
         """
-        Count number of origin files in each language
-
+        Get the translation stats from commit history after setting status.
         Parameters
         ----------
         commits: dictionary
             Commit history of the repository organized by
             {
                 "basename": {
-                    "filename": {
-                        "lang": "language of this file",
-                        "ft": "timestamp of the first commit",
-                        "lt": "timestamp of the last commit",
+                    "locale": {
+                        "filename": name of the target file,
+                        "ft": timestamp of the first commit (float),
+                        "lt": timestamp of the last commit (float),
                         "history": {
                             timestamp (float): [#additions, #deletions]
+                        },
+                        "status": {
+                            "open", "updated", "completed", or "source"
                         }
                     }
                 }
             }
-            The basename is the name of the content that is common among languages.
-        origins: dictionary
-            Source files (the original version of content) organized by
+
+        Returns
+        -------
+        stats: dictionary
             {
-                "basename": {
-                    "name of the source file"
+                locale: {
+                    "total": int,
+                    "open": int,
+                    "updated": int,
+                    "completed": int
                 }
             }
-        langs: set
-            Set of all language codes contained and monitored in the repository.
+        """
+        stats = {}
 
-        Returns
-        -------
-        cnt: dictionary
-            Count of source files for each language organized by
+        for basefile in commits:
+            files = commits[basefile]
+            for lang in files:
+
+                if lang not in stats:
+                    stats[lang] = {"open":0, "updated":0, "completed":0, "total":0}
+                
+                status = files[lang]["status"]
+                
+                if status != "source":
+                    stats[lang]["total"] += 1
+                    stats[lang][status] += 1
+
+        return stats
+
+    def stats(self, stats):
+        """
+        Print out a summary of the translation status.
+        Parameters
+        ----------
+        stats: dictionary
             {
-                "language code": number of source files
+                locale: {
+                    "total": int,
+                    "open": int,
+                    "updated": int,
+                    "completed": int
+                }
             }
         """
-        cnt = {lang: 0 for lang in langs}
-        for base_file in origins:
-            file = origins[base_file]
-            lang = commits[base_file][file]["lang"]
-            cnt[lang] += 1
-        return cnt
-
-    def get_status(self, commits, origins, langs):
-        """
-        Count number of source files that are Open, Updated, Completed
-
-        Returns
-        -------
-        complete: dictionary
-            Count of source files in Complete status organized by
-            {
-                "language code": number of completed source files
-            }
-        update: dictionary
-            Count of source files in Update status organized by
-            {
-                "language code": number of updated source files
-            }
-        open: dictionary
-            Count of source files in Open status organized by
-            {
-                "language code": number of open source files
-            }
-        """
-        n_langs = len(langs)
-        complete = {lang: 0 for lang in langs}
-        update = {lang: 0 for lang in langs}
-        open = {lang: 0 for lang in langs}
-        for base_file in commits:
-            origin = origins[base_file]
-            files = commits[base_file]
-            remain, updated = n_langs, False
-            for file in files:
-                if file != origin:
-                    if files[file]["lt"] >= files[origin]["lt"]:
-                        # When source and target file were changed in the same
-                        # commit but source file has more additions, the status
-                        # is also marked as updated.
-                        if (
-                            files[file]["lt"] == files[origin]["lt"]
-                            and files[file]["history"][files[origin]["lt"]][0]
-                            < files[origin]["history"][files[origin]["lt"]][0]
-                        ):
-                            updated = True
-                        else:
-                            remain -= 1
-                    else:
-                        updated = True
-            if remain == 1:
-                complete[files[origin]["lang"]] += 1
-            elif updated:
-                update[files[origin]["lang"]] += 1
-            else:
-                open[files[origin]["lang"]] += 1
-        return complete, update, open
-
-    def stats(self, commits, origins, langs):
-        """
-        Print out a summary of the translation status
-        """
-        complete, update, open = self.get_status(commits, origins, langs)
-        origin = self.get_num_origin(commits, origins, langs)
         data = []
-        for lang in langs:
-            data.append([lang, origin[lang], open[lang], update[lang], complete[lang]])
+        for lang in stats:
+            stat = stats[lang]
+            data.append(
+                [lang, stat["total"], stat["open"], stat["updated"], stat["completed"]]
+            )
+
         print(
             tabulate(
                 data,
-                headers=["Language", "Origin", "Open", "Updated", "Completed"],
+                headers=["Target Language", "Total", "Open", "Updated", "Completed"],
+                tablefmt="orgtbl",
+            )
+        )
+
+    def get_details(self, commits):
+        """
+        Get details of translation needs containing File (target filename), Status
+        (Open, Updated, or Completed), Source Language, Target Language, Word
+        Count, and Percent Change.
+        Returns
+        -------
+        details: list
+            [{
+                "basefile": name of the source file
+                "status": "open" or "updated",
+                "src_lang": source language,
+                "tgt_lang": target language,
+                "wc": word count,
+                "pc": percent change
+            }]
+        """
+        details = []
+        for basefile in commits:
+
+            files = commits[basefile]
+
+            # Search for the src_lang
+            for lang in files:
+                if files[lang]["status"] == "source":
+                    src_lang = lang
+                    break
+            
+            # Calculate word count of the source file
+            wc = self.word_count(files[src_lang]["filename"])
+            
+            for lang in files:
+                status = files[lang]["status"]
+                if status == "source":
+                    continue
+                # File in "open" status is 100% percent updated and 0% percent completed
+                elif status == "open":
+                    pu = 1.0
+                    pc = 0
+                # Compute percent updated and percent completed for file in updated status
+                elif status == "updated":
+                    pu = self.pct_updated(files[src_lang], files[lang])
+                    pc = self.pct_completed(files[src_lang], files[lang])
+                # File in "completed" status is 0% percent updated. Note that
+                # some target file's last commit time might be the same as the 
+                # source file but not 100% completed, pc can give an estimation
+                # of translation work needed in that case
+                else:
+                    pu = 0
+                    pc = self.pct_completed(files[src_lang], files[lang])
+
+                details.append(
+                    {
+                        "basefile": basefile,
+                        "status": status,
+                        "src_lang": src_lang,
+                        "wc": str(wc),
+                        "tgt_lang": lang,
+                        "pc": str(round(pc, 3) * 100)+"%",
+                        "pu": str(round(pu, 3) * 100)+"%",
+                    }
+                )
+
+        return details
+
+    def detail(self, details):
+        """
+        Print out the details of the work required for translating each target
+        file, its open/updated/completed status, source and target language, and 
+        the count of words in the source file.
+        """
+        data = []
+        for row in details:
+            if (self.src_lang == "" or self.src_lang == row["src_lang"]) and (
+                self.tgt_lang == "" or self.tgt_lang == row["tgt_lang"]
+            ):
+
+                data.append(
+                    [
+                        row["basefile"],
+                        row["status"],
+                        row["src_lang"],
+                        row["wc"],
+                        row["tgt_lang"],
+                        row["pc"],
+                        row["pu"],
+                    ]
+                )
+        # Print detail data in tabulate format
+        print(
+            tabulate(
+                data,
+                headers=[
+                    "File",
+                    "Status",
+                    "Source Language",
+                    "Word Count",
+                    "Target Language",
+                    "Percent Completed",
+                    "Percent Updated",
+                ],
                 tablefmt="orgtbl",
             )
         )
@@ -200,229 +266,63 @@ class StatusReporter:
             Estimation of word count.
         """
         wc = 0
-        with open(self.repo_path + file, "r+") as f:
+        with open(self.repo_path / file, "r+") as f:
             for line in f:
+                if line == "" or line == "\n":
+                    continue
                 wc += len(line.split(" "))
         return wc
 
-    def count_lines(self, file):
+    def pct_updated(self, src_file, tgt_file):
         """
-        Count the total number of lines of a given file.
-
+        Count the number of additions in tgt_file maintained by git history
+        after src_file's last commit.
         Parameters
         ----------
-        file: string
-            Name of the file.
-
-        Returns
-        -------
-        cnt: int
-            Number of lines
-        """
-        with open(self.repo_path + file, "r+") as f:
-            cnt = len(f.readlines())
-        return cnt
-
-    def count_additions(self, history, timestamp):
-        """
-        Count the number of additions maintained by git history
-        after a provided timestamp.
-
-        Parameters
-        ----------
-        history: dictionary
-            Git history of a file parsed by GitReader:
+        src_file: dictionary
+            Commit history of the source file:
             {
-                timestamp: [#additions, #deletions]
+                "filename": name of the target file,
+                "ft": timestamp of the first commit (float),
+                "lt": timestamp of the last commit (float),
+                "history": {
+                    timestamp (float): [#additions, #deletions]
+                },
+                "status": {
+                    "open", "updated", "completed", or "source"
             }
 
-        timestamp: float
-            Provided timestamp in time.time() format.
-
-        Returns
-        -------
-        cnt: int
-            Total number of additions after timestamp.
+        tgt_file: dictionary
+            Commit history of the target file.
         """
-        cnt = 0
-        for ts in history:
-            if ts > timestamp:
-                cnt += history[ts][0]
-        return cnt
+        src_lt, tgt_lt = src_file["lt"], tgt_file["lt"]
+        src_n_lines = src_file["history"][src_lt][-1]
 
-    def detail(self, commits, origins, langs):
+
+        if tgt_lt >= src_lt:
+            return 0
+
+        elif src_n_lines == 0:
+            return 1
+
+        else:
+            # Count all additions in the source file after target file's last update timestamp
+            cnt = 0
+            for ts in src_file["history"]:
+                if ts > tgt_lt:
+                    cnt += src_file["history"][ts][0]
+            return cnt / src_n_lines            
+
+    def pct_completed(self, src_file, tgt_file):
         """
-        Print out the details of the work required for translating each source
-        file, its Open/Update status, source and target language, and the count
-        of words in the source file.
+        Compute total number of lines of the tgt_file divided by the src_file.
         """
-        data = []
-        for base_file in commits:
-            origin = origins[base_file]
-            files = commits[base_file]
-            src_lang = files[origin]["lang"]
+        
+        src_lt, tgt_lt = src_file["lt"], tgt_file["lt"]
+        src_n_lines = src_file["history"][src_lt][-1]
+        tgt_n_lines = tgt_file["history"][tgt_lt][-1]
 
-            total_lines = self.count_lines(origin)
-
-            # Track target languages that are complete or need update
-            update_tgt_lang, complete_tgt_lang = [], []
-            for file in files:
-                if file != origin:
-                    target_lang = files[file]["lang"]
-                    src_lt = files[origin]["lt"]
-                    tgt_lt = files[file]["lt"]
-
-                    def append_update():
-                        update_tgt_lang.append(target_lang)
-                        pct = str(round(update_lines / total_lines, 3) * 100) + "%"
-                        if (self.src_lang == "" or self.src_lang == src_lang) and (
-                            self.tgt_lang == "" or self.tgt_lang == target_lang
-                        ):
-                            data.append(
-                                [origin, "Update", src_lang, target_lang, "?", pct]
-                            )
-
-                    if tgt_lt < src_lt:
-                        # Count all additions in the origin file after current file's last update timestamp
-                        update_lines = self.count_additions(
-                            files[origin]["history"], tgt_lt
-                        )
-                        append_update()
-                    # When source and target file were changed in the same
-                    # commit but source file has more additions, the status
-                    # is also marked as updated.
-                    elif tgt_lt == src_lt:
-                        src_add = files[origin]["history"][files[origin]["lt"]][0]
-                        tgt_add = files[file]["history"][files[origin]["lt"]][0]
-                        if src_add > tgt_add:
-                            update_lines = src_add - tgt_add
-                            append_update()
-                        else:
-                            complete_tgt_lang.append(target_lang)
-                    else:
-                        complete_tgt_lang.append(target_lang)
-
-            # Target languages in Open status is not yet included in the commit history
-            open_target_lang = [
-                lang
-                for lang in langs
-                if lang not in update_tgt_lang
-                and lang not in complete_tgt_lang
-                and lang != src_lang
-            ]
-            for target_lang in open_target_lang:
-                if (self.src_lang == "" or self.src_lang == src_lang) and (
-                    self.tgt_lang == "" or self.tgt_lang == target_lang
-                ):
-                    data.append(
-                        [
-                            origin,
-                            "Open",
-                            src_lang,
-                            target_lang,
-                            self.word_count(file),
-                            "100%",
-                        ]
-                    )
-
-        # Print detail data in tabulate format
-        print(
-            tabulate(
-                data,
-                headers=[
-                    "File",
-                    "Status",
-                    "Source Language",
-                    "Target Language",
-                    "Word Count",
-                    "Percent Change",
-                ],
-                tablefmt="orgtbl",
-            )
-        )
-
-
-if __name__ == "__main__":
-    parser = argparse.ArgumentParser()
-    group = parser.add_mutually_exclusive_group(required=True)
-    group.add_argument(
-        "--repo_url",
-        type=str,
-        default="",
-        help="Please specify the url of the repository for translation monitoring",
-    )
-    group.add_argument(
-        "--repo_path",
-        type=str,
-        default="",
-        help="Please specify the path to the repository",
-    )
-    parser.add_argument(
-        "--content_path",
-        nargs="+",
-        type=str,
-        default=["content/"],
-        help="Please specify the path from the root of repository to the content to be translated",
-    )
-    parser.add_argument(
-        "--branch",
-        type=str,
-        default="main",
-        help="Please specify the name of branch to fetch the .git history",
-    )
-    parser.add_argument(
-        "--file_ext",
-        nargs="+",
-        default=["md"],
-        help="Please specify the file extension of the translation files",
-    )
-    parser.add_argument(
-        "--pattern",
-        type=str,
-        choices=["folder/", ".lang"],
-        required=True,
-        help="Please specify the pattern of how the translation files are organized",
-    )
-    parser.add_argument(
-        "--langs",
-        type=str,
-        required=False,
-        default="",
-        help='Target languages to monitor for translation, e.g. "en zh ja" ',
-    )
-
-    parser.add_argument(
-        "--detail_src_lang",
-        type=str,
-        default="",
-        help="Specify a source language to display the translation details",
-    )
-    parser.add_argument(
-        "--detail_tgt_lang",
-        type=str,
-        default="",
-        help="Specify the target language to display the translation details",
-    )
-
-    config = parser.parse_args()
-    reader = GitReader(
-        repo_url=config.repo_url,
-        repo_path=config.repo_path,
-        content_path=config.content_path,
-        branch=config.branch,
-        file_ext=config.file_ext,
-        pattern=config.pattern,
-        langs=config.langs,
-    )
-
-    commits = reader.parse_commits()
-    origins = reader.get_origins(commits)
-    langs = reader.get_langs(commits)
-
-    reporter = StatusReporter(
-        repo_path=reader.repo_path,
-        src_lang=config.detail_src_lang,
-        tgt_lang=config.detail_tgt_lang,
-    )
-    reporter.stats(commits, origins, langs)
-    reporter.detail(commits, origins, langs)
+        if src_n_lines == 0:
+            return 1.0
+        else:
+            return tgt_n_lines / src_n_lines

@@ -13,5 +13,5 @@ identifies new source files and displays the translation needs.
 # Imports
 ##########################################################################
 
-from .reader import GitReader
-from .reporter import StatusReporter
+from .reader import *
+from .reporter import *
