@@ -9,7 +9,7 @@ Rumi currently supports two workflows for translation monitoring: file-based mon
 ## File-based Translation Monitoring Workflow
 
 **File-based translation flow exemplified with Hugo site**
-![](docs/images/readme/hugo-flow.png)
+![](https://raw.githubusercontent.com/rotationalio/rumi/main/docs/images/readme/hugo-flow.png?token=ADVLS6MXMRDY2AKTXFYG2MTBV4ANG)
 
 ### 1. Create reader
 
@@ -124,7 +124,7 @@ For more about setting up a Hugo site, check out the documentation about [Hugo i
 ## Message-based Translation Monitoring Workflow
 
 **Message-based translation flow exemplified with React App**
-![](docs/images/readme/react-flow.png)
+![](https://raw.githubusercontent.com/rotationalio/rumi/main/docs/images/readme/react-flow.png?token=ADVLS6M34UDADK7JFLS3ZPTBV4AXY)
 
 <!-- need updates after refactoring reporter for unified data structure -->
 ### 1. Create reporter
