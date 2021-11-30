@@ -261,7 +261,7 @@ class FileReader(BaseReader):
         self.src_lang = src_lang
         # Pool of target languages to look for
         self.langs = set(langs.split(" ")) if langs else ALL_LANGS
-        
+
     def process_rename(self, filename):
         """
         Clean out the { xxx => xxx } renaming format in file name.
@@ -277,7 +277,7 @@ class FileReader(BaseReader):
             return filename, None
 
         renamed = re.search(r"\{.+=>.+\}", filename)
-        
+
         # Case when filename is "path/{ xxx => xxx }/file.md"
         if renamed:
             rename_pattern = renamed.group()
@@ -285,7 +285,7 @@ class FileReader(BaseReader):
             # Reassemble the original filename and renamed filename
             ori_name = filename.replace(rename_pattern, part1.strip())
             rename = filename.replace(rename_pattern, part2.strip())
-        
+
         # Case when filename is "xxx => xxx"
         else:
             ori_name, rename = filename.split(rename_sign)
@@ -329,8 +329,8 @@ class FileReader(BaseReader):
 
             timestamp = float(datetime.timestamp(commit.authored_datetime))
 
-            for file in commit.stats.files:          
-   
+            for file in commit.stats.files:
+
                 ori_name, rename = self.process_rename(file)
 
                 if rename:
@@ -343,7 +343,7 @@ class FileReader(BaseReader):
 
                 if fname not in self.targets:
                     continue
-                
+
                 add = commit.stats.files[file]["insertions"]
                 delete = commit.stats.files[file]["deletions"]
                 n_lines = commit.stats.files[file]["insertions"]
@@ -363,7 +363,11 @@ class FileReader(BaseReader):
                     elif timestamp > commits[base_name][lang]["lt"]:
                         commits[base_name][lang]["lt"] = timestamp
 
-                    commits[base_name][lang]["history"][timestamp] = [add, delete, n_lines]
+                    commits[base_name][lang]["history"][timestamp] = [
+                        add,
+                        delete,
+                        n_lines,
+                    ]
                 else:
                     commits[base_name][lang] = {
                         "filename": fname,
@@ -371,7 +375,7 @@ class FileReader(BaseReader):
                         "lt": timestamp,
                         "history": {timestamp: [add, delete, n_lines]},  # handle total
                     }
-        
+
         # Determin which locale is the source for each basename
         sources = self.get_sources(commits)
 
@@ -380,7 +384,7 @@ class FileReader(BaseReader):
 
         # Set translation status for each locale of each basename
         commits = self.set_status(commits, sources)
-        
+
         return commits
 
     def parse_base_lang(self, file_name):
@@ -400,7 +404,7 @@ class FileReader(BaseReader):
             Code of language used in the file.
         """
         file_name = Path(file_name)
-        
+
         if self.pattern == "folder/":
             # In this pattern, lang (locale) is one of the directory name
             for dir_name in file_name.parts:
@@ -413,9 +417,9 @@ class FileReader(BaseReader):
         elif self.pattern == ".lang":
             # In this pattern, lang (locale) is one of the extensions
             extensions = file_name.suffixes
-            
+
             for ext in extensions:
-                
+
                 if ext[1:] in self.langs:
                     lang = ext[1:]
                     break
@@ -437,11 +441,11 @@ class FileReader(BaseReader):
         langs: set
             Set of all language codes contained and monitored in the repository.
         """
-    
+
         langs = []
         for base_file in commits:
             langs.extend(list(commits[base_file].keys()))
-        
+
         return set(langs)
 
     def set_langs(self, commits):
@@ -472,14 +476,14 @@ class FileReader(BaseReader):
                 if file_dict["ft"] < st:
                     src_lang = lang
                     st = file_dict["ft"]
-                
+
                 # When two file have the same first commit time, use default src_lang
                 elif file_dict["ft"] == st:
                     if lang == self.src_lang:
                         src_lang = lang
-        
+
             sources[base_file] = src_lang
-        
+
         return sources
 
     def set_status(self, commits, sources):
@@ -528,15 +532,15 @@ class FileReader(BaseReader):
 
             src_lang = sources[basefile]
             files = commits[basefile]
-            
+
             for lang in files:
-               
+
                 if lang == src_lang:
                     files[lang]["status"] = "source"
-                
+
                 else:
                     # Target file with empty commit history is in status "open"
-                    if files[lang] == {} or files[lang] == {"status":"open"}:
+                    if files[lang] == {} or files[lang] == {"status": "open"}:
                         files[lang]["status"] = "open"
 
                     # Target file with last commit time not earlier than source file is "completed"

@@ -106,10 +106,10 @@ class FileReporter:
             for lang in files:
 
                 if lang not in stats:
-                    stats[lang] = {"open":0, "updated":0, "completed":0, "total":0}
-                
+                    stats[lang] = {"open": 0, "updated": 0, "completed": 0, "total": 0}
+
                 status = files[lang]["status"]
-                
+
                 if status != "source":
                     stats[lang]["total"] += 1
                     stats[lang][status] += 1
@@ -173,10 +173,10 @@ class FileReporter:
                 if files[lang]["status"] == "source":
                     src_lang = lang
                     break
-            
+
             # Calculate word count of the source file
             wc = self.word_count(files[src_lang]["filename"])
-            
+
             for lang in files:
                 status = files[lang]["status"]
                 if status == "source":
@@ -190,7 +190,7 @@ class FileReporter:
                     pu = self.pct_updated(files[src_lang], files[lang])
                     pc = self.pct_completed(files[src_lang], files[lang])
                 # File in "completed" status is 0% percent updated. Note that
-                # some target file's last commit time might be the same as the 
+                # some target file's last commit time might be the same as the
                 # source file but not 100% completed, pc can give an estimation
                 # of translation work needed in that case
                 else:
@@ -204,8 +204,8 @@ class FileReporter:
                         "src_lang": src_lang,
                         "wc": str(wc),
                         "tgt_lang": lang,
-                        "pc": str(round(pc, 3) * 100)+"%",
-                        "pu": str(round(pu, 3) * 100)+"%",
+                        "pc": str(round(pc, 3) * 100) + "%",
+                        "pu": str(round(pu, 3) * 100) + "%",
                     }
                 )
 
@@ -298,7 +298,6 @@ class FileReporter:
         src_lt, tgt_lt = src_file["lt"], tgt_file["lt"]
         src_n_lines = src_file["history"][src_lt][-1]
 
-
         if tgt_lt >= src_lt:
             return 0
 
@@ -311,13 +310,13 @@ class FileReporter:
             for ts in src_file["history"]:
                 if ts > tgt_lt:
                     cnt += src_file["history"][ts][0]
-            return cnt / src_n_lines            
+            return cnt / src_n_lines
 
     def pct_completed(self, src_file, tgt_file):
         """
         Compute total number of lines of the tgt_file divided by the src_file.
         """
-        
+
         src_lt, tgt_lt = src_file["lt"], tgt_file["lt"]
         src_n_lines = src_file["history"][src_lt][-1]
         tgt_n_lines = tgt_file["history"][tgt_lt][-1]

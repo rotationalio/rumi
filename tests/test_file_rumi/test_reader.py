@@ -28,14 +28,17 @@ from rumi.file_rumi.reader import FileReader
 
 @pytest.mark.usefixtures("commits_no_status", "commits_status", "sources")
 class TestFileReader:
-    
     @pytest.mark.parametrize(
         "filename, ori_name, rename",
         [
             ("content/file.md", "content/file.md", None),
-            ("content/{ english => en }/file.md", "content/english/file.md", "content/en/file.md"),
-            ("file1.md => file2.md", "file1.md", "file2.md")
-        ]
+            (
+                "content/{ english => en }/file.md",
+                "content/english/file.md",
+                "content/en/file.md",
+            ),
+            ("file1.md => file2.md", "file1.md", "file2.md"),
+        ],
     )
     def test_process_rename(self, filename, ori_name, rename):
         """
@@ -101,7 +104,7 @@ class TestFileReader:
         "pattern, en_fname, fr_fname",
         [
             ("folder/", "content/en/test_content.md", "content/fr/test_content.md"),
-            (".lang", "content/test_content.en.md", "content/test_content.fr.md")
+            (".lang", "content/test_content.en.md", "content/test_content.fr.md"),
         ],
     )
     def test_parse_history(self, tmpdir, pattern, en_fname, fr_fname):
@@ -116,9 +119,9 @@ class TestFileReader:
             extension=".md",
             repo_path=repo_path,
             branch="test",
-            pattern=pattern
+            pattern=pattern,
         )
-        
+
         got = reader.parse_history()
 
         want = {
@@ -128,18 +131,18 @@ class TestFileReader:
                     "ft": ts1,
                     "lt": ts1,
                     "history": {ts1: [1, 0, 1]},
-                    "status": "source"
+                    "status": "source",
                 },
                 "fr": {
                     "filename": fr_fname,
                     "ft": ts2,
                     "lt": ts2,
                     "history": {ts2: [1, 0, 1]},
-                    "status": "completed"
-                }
+                    "status": "completed",
+                },
             }
         }
-        
+
         assert got == want
 
     @pytest.mark.parametrize(
@@ -147,32 +150,25 @@ class TestFileReader:
         [
             ("folder/", "content/en/file.md", "file.md", "en"),
             (".lang", "content/file.en.md", "file.md", "en"),
-        ]
+        ],
     )
     def test_parse_base_lang(self, pattern, fname, basename, lang):
         """
         Assert basename and lang can be parsed for two patterns.
         """
-        reader = FileReader(
-            content_path="content/",
-            extension=".md",
-            pattern=pattern
-        )
+        reader = FileReader(content_path="content/", extension=".md", pattern=pattern)
 
         got_basename, got_lang = reader.parse_base_lang(fname)
         assert got_basename == basename
         assert got_lang == lang
 
-    
     def test_get_langs(self):
         """
         Assert self.langs can be specified.
         """
-        
-        reader = FileReader(
-            langs="EN FR"
-        )
-        commits = {"basefile": {"EN":{}, "FR":{}}}
+
+        reader = FileReader(langs="EN FR")
+        commits = {"basefile": {"EN": {}, "FR": {}}}
         got = reader.get_langs(commits)
         want = {"EN", "FR"}
         assert got == want
@@ -182,15 +178,8 @@ class TestFileReader:
         Assert when first commit time is the same for the source and target files,
         source file is decided based on default source language.
         """
-        reader = FileReader(
-            src_lang="fr"
-        )
-        commits = {
-            "basefile": {
-                "en": {"ft": 3.0},
-                "fr": {"ft": 3.0}
-            }
-        }
+        reader = FileReader(src_lang="fr")
+        commits = {"basefile": {"en": {"ft": 3.0}, "fr": {"ft": 3.0}}}
         got = reader.get_sources(commits)
         want = {"basefile": "fr"}
         assert got == want
@@ -199,7 +188,7 @@ class TestFileReader:
         """
         Assert "open", "completed", "updated" and "source" status correctly set.
         """
-        
+
         reader = FileReader()
 
         got = reader.set_status(self.commits_no_status, self.sources)
