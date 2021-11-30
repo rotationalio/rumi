@@ -8,7 +8,8 @@ Rumi currently supports two workflows for translation monitoring: file-based mon
 
 ## File-based Translation Monitoring Workflow
 
-![File-based translation flow exemplified with Hugo site](/fixtures/hugo-flow.png)
+**File-based translation flow exemplified with Hugo site**
+![](docs/images/readme/hugo-flow.png)
 
 ### 1. Create reader
 
@@ -122,7 +123,8 @@ For more about setting up a Hugo site, check out the documentation about [Hugo i
 
 ## Message-based Translation Monitoring Workflow
 
-![Message-based translation flow exemplified with React App](/fixtures/react-flow.png)
+**Message-based translation flow exemplified with React App**
+![](docs/images/readme/react-flow.png)
 
 <!-- need updates after refactoring reporter for unified data structure -->
 ### 1. Create reporter
