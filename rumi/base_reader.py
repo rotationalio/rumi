@@ -53,7 +53,7 @@ class BaseReader:
     ) -> None:
         self.repo_path = self.validate_repo_path(repo_path)
         self.branch = branch
-        self.targets = self.init_targets(content_path.split(" "), extension.split(" "))
+        self.targets = self.init_targets(content_path, extension)
 
     def init_targets(self, content_path, extension):
         """
@@ -75,9 +75,10 @@ class BaseReader:
             Set of target files (string of path from repo_path to target file)
             for translation monitoring.
         """
+        extension = extension.split(" ")
         target = []
 
-        for cp in content_path:
+        for cp in content_path.split(" "):
             # Resolve content directory to only walk it
             cp = self.repo_path.joinpath(cp)
 

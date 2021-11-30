@@ -25,7 +25,7 @@ from rumi.base_reader import BaseReader
 
 
 class TestBaseReader:
-    def test_fixtures_base_reader(self, tmpdir):
+    def generate_fixtures(self, tmpdir):
         """
         Generate fixture repo for testing BaseReader.
         """
@@ -74,7 +74,7 @@ class TestBaseReader:
         not identified as target.
         """
         # Setup repository
-        repo_name = self.test_fixtures_base_reader(tmpdir)
+        repo_name = self.generate_fixtures(tmpdir)
 
         reader = BaseReader(
             content_path="content",
@@ -103,7 +103,7 @@ class TestBaseReader:
         """
         Assert repository is checkout to the branch.
         """
-        repo_name = self.test_fixtures_base_reader(tmpdir)
+        repo_name = self.generate_fixtures(tmpdir)
         reader = BaseReader(
             content_path="content",
             extension=".c",

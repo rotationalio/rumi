@@ -26,7 +26,7 @@ from rumi.msg_rumi.reader import MsgReader
 
 
 class TestMsgReader:
-    def test_fixtures_msg_reader(self, tmpdir):
+    def generate_fixtures(self, tmpdir):
         """
         Generate fixture repo for testing MsgReader.
         """
@@ -100,7 +100,7 @@ class TestMsgReader:
         """
         Assert git history is correctly parsed into a commit dictionary.
         """
-        repo_path, ts = self.test_fixtures_msg_reader(tmpdir)
+        repo_path, ts = self.generate_fixtures(tmpdir)
 
         reader = MsgReader(
             content_path="locales/",
