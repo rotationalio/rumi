@@ -9,7 +9,7 @@
 ##########################################################################
 
 
-from .version import get_version, __version_info__
+from rumi.version import get_version, __version_info__
 
 
 ##########################################################################

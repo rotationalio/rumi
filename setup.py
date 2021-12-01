@@ -30,37 +30,40 @@ from setuptools import find_packages
 with open("README.md", "r", encoding="utf-8") as fh:
     LONG_DESCRIPTION = fh.read()
 
-NAME         = "rumi-i18n"
-DESCRIPTION  = "A static site translation monitoring tool"
-AUTHOR       = "Tianshu Li"
-EMAIL        = "tianshu@rotational.io"
-LICENSE      = "Apache"
-REPOSITORY   = "https://github.com/rotationalio/rumi"
-PACKAGE      = "rumi"
+NAME = "rumi-i18n"
+DESCRIPTION = "A static site translation monitoring tool"
+AUTHOR = "Tianshu Li"
+EMAIL = "tianshu@rotational.io"
+LICENSE = "Apache"
+REPOSITORY = "https://github.com/rotationalio/rumi"
+PACKAGE = "rumi"
 
 ## Define the keywords
-KEYWORDS     = [
-    'rumi', 'python', 'translation monitoring', 'l10n'
-]
+KEYWORDS = ["rumi", "python", "translation monitoring", "l10n"]
 
 ## Define the classifiers
-CLASSIFIERS  = [
-    'Development Status :: 4 - Beta',
-    'Environment :: Console',
-    'License :: OSI Approved :: Apache Software License',
-    'Natural Language :: English',
-    'Operating System :: OS Independent',
-    'Programming Language :: Python :: 3',
+CLASSIFIERS = [
+    "Development Status :: 4 - Beta",
+    "Environment :: Console",
+    "License :: OSI Approved :: Apache Software License",
+    "Natural Language :: English",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3",
 ]
 
 ## Important Paths
-PROJECT      = os.path.abspath(os.path.dirname(__file__))
-REQUIRE_PATH = "requirements/requirements.txt"
+PROJECT = os.path.abspath(os.path.dirname(__file__))
+REQUIRE_PATH = os.path.join("requirements", "requirements.txt")
 VERSION_PATH = os.path.join(PACKAGE, "version.py")
 
 ## Directories to ignore in find_packages
-EXCLUDES     = (
-    "tests", "bin", "docs", "fixtures", "register", "notebooks",
+EXCLUDES = (
+    "tests",
+    "bin",
+    "docs",
+    "fixtures",
+    "register",
+    "notebooks",
 )
 
 
@@ -74,7 +77,7 @@ def read(*parts):
     Assume UTF-8 encoding and return the contents of the file located at the
     absolute path from the REPOSITORY joined with *parts.
     """
-    with codecs.open(os.path.join(PROJECT, *parts), 'rb', 'utf-8') as f:
+    with codecs.open(os.path.join(PROJECT, *parts), "rb", "utf-8") as f:
         return f.read()
 
 
@@ -85,7 +88,7 @@ def get_version(path=VERSION_PATH):
     """
     namespace = {}
     exec(read(path), namespace)
-    return namespace['get_version']()
+    return namespace["get_version"]()
 
 
 def get_requires(path=REQUIRE_PATH):
@@ -95,7 +98,7 @@ def get_requires(path=REQUIRE_PATH):
     """
     for line in read(path).splitlines():
         line = line.strip()
-        if line and not line.startswith('#'):
+        if line and not line.startswith("#"):
             yield line
 
 
@@ -130,5 +133,5 @@ config = {
 ##########################################################################
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     setup(**config)

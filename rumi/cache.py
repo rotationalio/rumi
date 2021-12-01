@@ -24,7 +24,7 @@ from datetime import datetime as dt
 ##########################################################################
 
 
-class Cache():
+class Cache:
     """
     Maintain caches for git history reader to load latest cache and read 
     git history since latest cache.
@@ -35,9 +35,10 @@ class Cache():
     which_rumi: string
         "file" or "msg" rumi.
     """
+
     def __init__(self, repo_name, which_rumi) -> None:
         self.repo_name = repo_name
-        self.date_format = '%Y-%m-%d %H:%M:%S'
+        self.date_format = "%Y-%m-%d %H:%M:%S"
         self.cache_dir = os.path.join("cache", which_rumi)
         if not os.path.isdir(self.cache_dir):
             os.mkdir(self.cache_dir)
@@ -58,7 +59,7 @@ class Cache():
         dir = os.path.join(self.cache_dir, self.repo_name)
         if not os.path.isdir(dir):
             os.mkdir(dir)
-        
+
         cache_names = os.listdir(dir)
         if len(cache_names) == 0:
             latest_version = 0
@@ -92,7 +93,7 @@ class Cache():
         version = splits[0][1:]
         date = dt.strptime(" ".join(splits[1:]), self.date_format)
         return version, date
-    
+
     def name_cache(self, version, date):
         """
         Utility function to compose the name of cache file given version and 
@@ -110,7 +111,7 @@ class Cache():
             Name of the cache file.
         """
         name = os.path.join(
-            self.cache_dir, self.repo_name, "v"+str(version)+" "+date
+            self.cache_dir, self.repo_name, "v" + str(version) + " " + date
         )
         return name
 
@@ -132,16 +133,14 @@ class Cache():
                 old_commits = pickle.load(f)
         else:
             old_commits = None
-        
+
         if old_commits == commits:
             os.rename(old_file, self.name_cache(self.latest_version, date))
         else:
             new_version = self.latest_version + 1
-            file = os.path.join(
-                self.cache_dir, self.repo_name, "v"+str(new_version)+" "+date
-            )
+            file = self.name_cache(new_version, date)
             with open(file, "wb") as f:
-                pickle.dump(commits,f)
+                pickle.dump(commits, f)
 
     def load_cache(self):
         """
@@ -165,8 +164,9 @@ class Cache():
             The basename is the name of the content that is common among languages.
         """
         file = os.path.join(
-            self.cache_dir, self.repo_name, 
-            "v"+str(self.latest_version)+" "+self.latest_date
+            self.cache_dir,
+            self.repo_name,
+            "v" + str(self.latest_version) + " " + self.latest_date,
         )
         if os.path.isfile(file):
             with open(file, "rb") as f:
