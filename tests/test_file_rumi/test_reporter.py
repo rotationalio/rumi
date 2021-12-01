@@ -39,13 +39,13 @@ class TestFileReporter:
         }
         assert got == want
 
-    def test_stats(self):
+    def test_print_stats(self):
         """
         Assert reporter.stats() prints with no error.
         """
         reporter = FileReporter()
         stats = reporter.get_stats(self.commits_status)
-        reporter.stats(stats)
+        reporter.print_stats(stats)
 
     def generate_fixture(self, tmpdir):
         """
@@ -109,7 +109,7 @@ class TestFileReporter:
         ]
         assert got == want
 
-    def test_detail(self, tmpdir):
+    def test_print_details(self, tmpdir):
         """
         Assert reporter.detail() prints with no error.
         """
@@ -118,7 +118,7 @@ class TestFileReporter:
         reporter = FileReporter(repo_path=repo_path)
 
         details = reporter.get_details(self.commits_status)
-        reporter.detail(details)
+        reporter.print_details(details)
 
     def test_word_count(self, tmpdir):
         """

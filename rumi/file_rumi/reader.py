@@ -219,15 +219,15 @@ class FileReader(BaseReader):
     and also parses the source files and translation status.
     Parameters
     ----------
-    repo_path: string, default: "./"
+    repo_path: string, default: "."
         Path to the repository for translation monitoring.
     branch: string, default: "main"
         Name of the branch to read the github history from. Default to "main".
-    content_path: string, default: "content/"
+    content_paths: string, default: "content"
         Paths from the root of the repository to the directory that contains
-        contents for translation, joined by space, e.g., "content/
-        data/ i18n/". Default uses the "content/" folder.
-    extension: string, default: ".md"
+        contents for translation, joined by space, e.g., "content
+        data i18n". Default uses the "content" folder.
+    extensions: string, default: ".md"
         Extensions of the target files for translation monitoring, joined by
         space. Defult monitoring translation of the markdown files.
     pattern: string, choices: "folder/", ".lang"
@@ -242,17 +242,17 @@ class FileReader(BaseReader):
 
     def __init__(
         self,
-        repo_path="./",
+        repo_path=".",
         branch="main",
         langs="",
-        content_path="content/",
-        extension=".md",
+        content_paths="content",
+        extensions=".md",
         pattern="folder/",
         src_lang="en",
     ):
         super().__init__(
-            content_path=content_path,
-            extension=extension,
+            content_paths=content_paths,
+            extensions=extensions,
             repo_path=repo_path,
             branch=branch,
         )
@@ -346,7 +346,7 @@ class FileReader(BaseReader):
 
                 add = commit.stats.files[file]["insertions"]
                 delete = commit.stats.files[file]["deletions"]
-                n_lines = commit.stats.files[file]["insertions"]
+                n_lines = commit.stats.files[file]["lines"]
 
                 base_name, lang = self.parse_base_lang(fname)
 
@@ -356,7 +356,7 @@ class FileReader(BaseReader):
                 if base_name not in commits:
                     commits[base_name] = {}
 
-                # Track te first and last commit time for each locale of the basefile
+                # Track the first and last commit time for each locale of the basefile
                 if lang in commits[base_name]:
                     if timestamp < commits[base_name][lang]["ft"]:
                         commits[base_name][lang]["ft"] = timestamp
@@ -376,14 +376,14 @@ class FileReader(BaseReader):
                         "history": {timestamp: [add, delete, n_lines]},  # handle total
                     }
 
-        # Determin which locale is the source for each basename
+        # Determine which locale is the source for each basename
         sources = self.get_sources(commits)
 
         # Ensure each basename has the same set of locales
-        commits = self.set_langs(commits)
+        self.set_langs(commits)
 
         # Set translation status for each locale of each basename
-        commits = self.set_status(commits, sources)
+        self.set_status(commits, sources)
 
         return commits
 
@@ -412,7 +412,8 @@ class FileReader(BaseReader):
                     lang = dir_name
                     base_name = file_name.name
                     break
-            assert lang in self.langs, "Unable to parse file {}".format(file_name)
+            if not lang in self.langs:
+                raise Exception("Unable to parse file {}".format(file_name))
 
         elif self.pattern == ".lang":
             # In this pattern, lang (locale) is one of the extensions
@@ -423,8 +424,10 @@ class FileReader(BaseReader):
                 if ext[1:] in self.langs:
                     lang = ext[1:]
                     break
+            
+            if not lang in self.langs:
+                raise Exception("Unable to parse file {}".format(file_name))
 
-            assert lang in self.langs, "Unable to parse file {}".format(file_name)
             base_name = file_name.name.replace(ext, "")
         else:
             raise Exception("Unable to parse file {}".format(file_name))
@@ -452,9 +455,11 @@ class FileReader(BaseReader):
         """
         Parse through the commit dictionary and set all locales for each basefile.
         """
+        langs = self.get_langs(commits)
+
         for basefile in commits:
             files = commits[basefile]
-            langs = self.get_langs(commits)
+            
             for lang in langs:
                 if lang not in files:
                     files[lang] = {}
@@ -547,8 +552,8 @@ class FileReader(BaseReader):
                     elif files[lang]["lt"] >= files[src_lang]["lt"]:
                         files[lang]["status"] = "completed"
 
-                    # Target file with last commit time earlier than source file is "completed"
+                    # Target file with last commit time earlier than source file is "updated"
                     else:
                         files[lang]["status"] = "updated"
-
+        
         return commits

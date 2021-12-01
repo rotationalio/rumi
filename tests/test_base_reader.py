@@ -77,8 +77,8 @@ class TestBaseReader:
         repo_name = self.generate_fixtures(tmpdir)
 
         reader = BaseReader(
-            content_path="content",
-            extension=".c",
+            content_paths="content",
+            extensions=".c",
             repo_path=str(tmpdir / repo_name),
             branch="test",
         )
@@ -93,8 +93,8 @@ class TestBaseReader:
         """
         with pytest.raises(Exception, match=r"Please specify a valid repository path"):
             reader = BaseReader(
-                content_path="content",
-                extension=".c",
+                content_paths="content",
+                extensions=".c",
                 repo_path=str(tmpdir / "wrong_base_reader_repo"),
                 branch="test",
             )
@@ -105,8 +105,8 @@ class TestBaseReader:
         """
         repo_name = self.generate_fixtures(tmpdir)
         reader = BaseReader(
-            content_path="content",
-            extension=".c",
+            content_paths="content",
+            extensions=".c",
             repo_path=str(tmpdir / repo_name),
             branch="test",
         )

@@ -116,7 +116,7 @@ class FileReporter:
 
         return stats
 
-    def stats(self, stats):
+    def print_stats(self, stats):
         """
         Print out a summary of the translation status.
         Parameters
@@ -187,15 +187,13 @@ class FileReporter:
                     pc = 0
                 # Compute percent updated and percent completed for file in updated status
                 elif status == "updated":
-                    pu = self.pct_updated(files[src_lang], files[lang])
-                    pc = self.pct_completed(files[src_lang], files[lang])
+                    pu, pc = self.compute_pct(files[src_lang], files[lang])
                 # File in "completed" status is 0% percent updated. Note that
                 # some target file's last commit time might be the same as the
                 # source file but not 100% completed, pc can give an estimation
                 # of translation work needed in that case
                 else:
-                    pu = 0
-                    pc = self.pct_completed(files[src_lang], files[lang])
+                    pu, pc = self.compute_pct(files[src_lang], files[lang])
 
                 details.append(
                     {
@@ -211,7 +209,7 @@ class FileReporter:
 
         return details
 
-    def detail(self, details):
+    def print_details(self, details):
         """
         Print out the details of the work required for translating each target
         file, its open/updated/completed status, source and target language, and 
@@ -268,15 +266,15 @@ class FileReporter:
         wc = 0
         with open(self.repo_path / file, "r+") as f:
             for line in f:
-                if line == "" or line == "\n":
+                if line.isspace():
                     continue
                 wc += len(line.split(" "))
         return wc
 
-    def pct_updated(self, src_file, tgt_file):
+    def compute_pct(self, src_file, tgt_file):
         """
-        Count the number of additions in tgt_file maintained by git history
-        after src_file's last commit.
+        Compute the percentage updated and percentage completed of the tgt_file
+        versus src_file.
         Parameters
         ----------
         src_file: dictionary
@@ -297,31 +295,28 @@ class FileReporter:
         """
         src_lt, tgt_lt = src_file["lt"], tgt_file["lt"]
         src_n_lines = src_file["history"][src_lt][-1]
+        tgt_n_lines = tgt_file["history"][tgt_lt][-1]
 
+        # pu = 0 and pc = 1 for empty files
+        if src_n_lines == 0:
+            return 0, 1
+        
+        # Compute percentage updated: pu
         if tgt_lt >= src_lt:
-            return 0
-
-        elif src_n_lines == 0:
-            return 1
-
+            pu = 0
         else:
             # Count all additions in the source file after target file's last update timestamp
             cnt = 0
             for ts in src_file["history"]:
                 if ts > tgt_lt:
                     cnt += src_file["history"][ts][0]
-            return cnt / src_n_lines
+            pu = cnt / src_n_lines
 
-    def pct_completed(self, src_file, tgt_file):
-        """
-        Compute total number of lines of the tgt_file divided by the src_file.
-        """
+        # Compute percentage completed: pc
+        pc = tgt_n_lines / src_n_lines
+        
+        return pu, pc
 
-        src_lt, tgt_lt = src_file["lt"], tgt_file["lt"]
-        src_n_lines = src_file["history"][src_lt][-1]
-        tgt_n_lines = tgt_file["history"][tgt_lt][-1]
+        
 
-        if src_n_lines == 0:
-            return 1.0
-        else:
-            return tgt_n_lines / src_n_lines
+        

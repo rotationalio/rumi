@@ -58,23 +58,23 @@ class TestMsgReporter:
 
         assert want_details == got_details
 
-    def test_stats(self):
+    def test_print_stats(self):
         """
         Assert reporter.stats() prints with no error.
         """
 
         reporter = MsgReporter()
         stats = reporter.get_stats(self.commits, self.src_lang)
-        reporter.stats(stats)
+        reporter.print_stats(stats)
 
-    def test_detail(self):
+    def test_print_details(self):
         """
         Assert reporter.detail() prints with no error.
         """
 
         reporter = MsgReporter()
         details = reporter.get_details(self.commits, self.src_lang)
-        reporter.details(details)
+        reporter.print_details(details)
 
     def test_download_needs(self, tmpdir):
         """

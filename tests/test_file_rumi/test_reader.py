@@ -115,8 +115,8 @@ class TestFileReader:
         repo_path, ts1, ts2 = self.generate_fixtures(tmpdir, pattern)
 
         reader = FileReader(
-            content_path="content/",
-            extension=".md",
+            content_paths="content",
+            extensions=".md",
             repo_path=repo_path,
             branch="test",
             pattern=pattern,
@@ -156,7 +156,7 @@ class TestFileReader:
         """
         Assert basename and lang can be parsed for two patterns.
         """
-        reader = FileReader(content_path="content/", extension=".md", pattern=pattern)
+        reader = FileReader(content_paths="content", extensions=".md", pattern=pattern)
 
         got_basename, got_lang = reader.parse_base_lang(fname)
         assert got_basename == basename

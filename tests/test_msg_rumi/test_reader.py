@@ -103,8 +103,8 @@ class TestMsgReader:
         repo_path, ts = self.generate_fixtures(tmpdir)
 
         reader = MsgReader(
-            content_path="locales/",
-            extension=".po",
+            content_paths="locales",
+            extensions=".po",
             src_lang="en",
             repo_path=repo_path,
             branch="test",
@@ -139,7 +139,7 @@ class TestMsgReader:
         Assert correct language is parsed from filename.
         """
         filename = "web/src/locales/en/messages.po"
-        reader = MsgReader(content_path="locales/", extension=".po", src_lang="en")
+        reader = MsgReader(content_paths="locales", extensions=".po", src_lang="en")
         lang = reader.parse_lang(filename)
 
         assert lang == "en"

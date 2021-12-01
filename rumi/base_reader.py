@@ -31,41 +31,41 @@ class BaseReader:
 
     Parameters
     ----------
-    repo_path: string, default: "./"
+    repo_path: string, default: "."
         Path to the repository for translation monitoring.
     branch: string, default: "main"
         Name of the branch to read the github history from. Default to "main".
-    content_path: string, default: "content/"
+    content_paths: string, default: "content"
         Paths from the root of the repository to the directory that contains
-        contents for translation, joined by space, e.g., "content/
-        data/ i18n/". Default uses the "content/" folder.
-    extension: string, default: ".md"
+        contents for translation, joined by space, e.g., "content
+        data i18n". Default uses the "content" folder.
+    extensions: string, default: ".md"
         Extensions of the target files for translation monitoring, joined by
         space. Defult monitoring translation of the markdown files.
     """
 
     def __init__(
         self,
-        repo_path="./",
+        repo_path=".",
         branch="main",
-        content_path="content/",
-        extension=".md",
+        content_paths="content",
+        extensions=".md",
     ) -> None:
         self.repo_path = self.validate_repo_path(repo_path)
         self.branch = branch
-        self.targets = self.init_targets(content_path, extension)
+        self.targets = self.init_targets(content_paths, extensions)
 
-    def init_targets(self, content_path, extension):
+    def init_targets(self, content_paths, extensions):
         """
         Set self.targets based on content paths and file extensions.
 
         Parameters
         ----------
-        content_path: string, default: "content/"
+        content_paths: string, default: "content"
             Paths from the root of the repository to the directory that contains
-            contents for translation, joined by space, e.g., "content/
-            data/ i18n/". Default uses the "content/" folder.
-        extension: string, default: ".md"
+            contents for translation, joined by space, e.g., "content
+            data i18n". Default uses the "content" folder.
+        extensions: string, default: ".md"
             Extensions of the target files for translation monitoring, joined by
             space. Defult monitoring translation of the markdown files.
 
@@ -75,10 +75,10 @@ class BaseReader:
             Set of target files (string of path from repo_path to target file)
             for translation monitoring.
         """
-        extension = extension.split(" ")
+        extensions = extensions.split(" ")
         target = []
 
-        for cp in content_path.split(" "):
+        for cp in content_paths.split(" "):
             # Resolve content directory to only walk it
             cp = self.repo_path.joinpath(cp)
 
@@ -101,7 +101,7 @@ class BaseReader:
 
                     # Check the extension, note you may want to use the more complex
                     # path.suffixes for multiple extensions e.g. myfile.en.md
-                    if path.suffix in extension:
+                    if path.suffix in extensions:
                         target.append(str(path))
         return set(target)
 
@@ -145,13 +145,13 @@ class BaseReader:
                 return
         raise Exception("Please provide a valid file name")
 
-    def validate_repo_path(self, repo_path="./"):
+    def validate_repo_path(self, repo_path="."):
         """
         Allow both "repo_name/" and "repo_name" provided as repo_path.
 
         Parameters
         ----------
-        repo_path: string, default: "./"
+        repo_path: string, default: "."
             Path to the repository to monitor the translation status.
 
         Returns
