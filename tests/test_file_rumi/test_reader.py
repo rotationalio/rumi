@@ -38,6 +38,8 @@ class TestFileReader:
                 "content/en/file.md",
             ),
             ("file1.md => file2.md", "file1.md", "file2.md"),
+            # Case when filename does not contain rename sign
+            ("file1.md file2.md", "file1.md file2.md", None)
         ],
     )
     def test_process_rename(self, filename, ori_name, rename):
@@ -50,6 +52,21 @@ class TestFileReader:
 
         assert got_ori_name == ori_name
         assert got_rename == rename
+
+    @pytest.mark.parametrize(
+        "badfilename",
+        [   
+            # Case when filename has multiple rename pattern { => } 
+            "{ content/{ english => en } => newdir } /file.md",
+        
+            # Case when filename has multiple rename sign =>
+            "file1.md => file=>2.md"
+        ]
+    )
+    def test_parse_rename_fail(self, badfilename):
+        with pytest.raises(Exception, match=r"Unable to parse the filename"):
+            reader = FileReader()
+            reader.process_rename(badfilename)
 
     def generate_fixtures(self, tmpdir, pattern):
         repo_name = "msg_reader_repo"
@@ -91,7 +108,7 @@ class TestFileReader:
         repo.git.commit(m="source content file")
         ts1 = float(datetime.timestamp(repo.head.commit.authored_datetime))
 
-        time.sleep(1)
+        time.sleep(0.5)
 
         fr_file.write_text("testing translation content", encoding="utf8")
         repo.git.add(A=True)
@@ -115,8 +132,8 @@ class TestFileReader:
         repo_path, ts1, ts2 = self.generate_fixtures(tmpdir, pattern)
 
         reader = FileReader(
-            content_paths="content",
-            extensions=".md",
+            content_paths=["content"],
+            extensions=[".md"],
             repo_path=repo_path,
             branch="test",
             pattern=pattern,
@@ -156,7 +173,7 @@ class TestFileReader:
         """
         Assert basename and lang can be parsed for two patterns.
         """
-        reader = FileReader(content_paths="content", extensions=".md", pattern=pattern)
+        reader = FileReader(content_paths=["content"], extensions=[".md"], pattern=pattern)
 
         got_basename, got_lang = reader.parse_base_lang(fname)
         assert got_basename == basename
@@ -191,6 +208,7 @@ class TestFileReader:
 
         reader = FileReader()
 
-        got = reader.set_status(self.commits_no_status, self.sources)
-        want = self.commits_status
-        assert got == want
+        commits = self.commits_no_status.copy()
+        reader.set_status(commits, self.sources)
+
+        assert commits == self.commits_status

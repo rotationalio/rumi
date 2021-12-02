@@ -35,25 +35,25 @@ class BaseReader:
         Path to the repository for translation monitoring.
     branch: string, default: "main"
         Name of the branch to read the github history from. Default to "main".
-    content_paths: string, default: "content"
-        Paths from the root of the repository to the directory that contains
-        contents for translation, joined by space, e.g., "content
-        data i18n". Default uses the "content" folder.
-    extensions: string, default: ".md"
-        Extensions of the target files for translation monitoring, joined by
-        space. Defult monitoring translation of the markdown files.
+    content_paths: list, default: ["content"]
+        List of paths from the root of the repository to the directory that 
+        contains contents for translation, e.g., ["content", "data", "i18n"]. 
+        Default uses the "content" folder.
+    extensions: list, default: [".md"]
+        List of extensions of the target files for translation monitoring. 
+        Defult monitoring translation of the markdown files.
     """
 
     def __init__(
         self,
         repo_path=".",
         branch="main",
-        content_paths="content",
-        extensions=".md",
+        content_paths=["content"],
+        extensions=[".md"],
     ) -> None:
         self.repo_path = self.validate_repo_path(repo_path)
         self.branch = branch
-        self.targets = self.init_targets(content_paths, extensions)
+        self.targets = self.init_targets(content_paths.copy(), extensions.copy())
 
     def init_targets(self, content_paths, extensions):
         """
@@ -75,10 +75,9 @@ class BaseReader:
             Set of target files (string of path from repo_path to target file)
             for translation monitoring.
         """
-        extensions = extensions.split(" ")
         target = []
 
-        for cp in content_paths.split(" "):
+        for cp in content_paths:
             # Resolve content directory to only walk it
             cp = self.repo_path.joinpath(cp)
 

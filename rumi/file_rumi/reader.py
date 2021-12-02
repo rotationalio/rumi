@@ -223,13 +223,13 @@ class FileReader(BaseReader):
         Path to the repository for translation monitoring.
     branch: string, default: "main"
         Name of the branch to read the github history from. Default to "main".
-    content_paths: string, default: "content"
-        Paths from the root of the repository to the directory that contains
-        contents for translation, joined by space, e.g., "content
-        data i18n". Default uses the "content" folder.
-    extensions: string, default: ".md"
-        Extensions of the target files for translation monitoring, joined by
-        space. Defult monitoring translation of the markdown files.
+    content_paths: list, default: ["content"]
+        List of paths from the root of the repository to the directory that 
+        contains contents for translation, e.g., ["content", "data", "i18n"]. 
+        Default uses the "content" folder.
+    extensions: list, default: [".md"]
+        List of extensions of the target files for translation monitoring. 
+        Defult monitoring translation of the markdown files.
     pattern: string, choices: "folder/", ".lang"
         Two types of patterns in which the static site repository is organized.
     langs: string, default: ""
@@ -245,14 +245,14 @@ class FileReader(BaseReader):
         repo_path=".",
         branch="main",
         langs="",
-        content_paths="content",
-        extensions=".md",
+        content_paths=["content"],
+        extensions=[".md"],
         pattern="folder/",
         src_lang="en",
     ):
         super().__init__(
-            content_paths=content_paths,
-            extensions=extensions,
+            content_paths=content_paths.copy(),
+            extensions=extensions.copy(),
             repo_path=repo_path,
             branch=branch,
         )
@@ -281,13 +281,20 @@ class FileReader(BaseReader):
         # Case when filename is "path/{ xxx => xxx }/file.md"
         if renamed:
             rename_pattern = renamed.group()
+            
+            if filename.count("=>") > 1:
+                raise Exception("Unable to parse the filename {}".format(filename))
             part1, part2 = rename_pattern[1:-1].split(rename_sign)
+
             # Reassemble the original filename and renamed filename
             ori_name = filename.replace(rename_pattern, part1.strip())
             rename = filename.replace(rename_pattern, part2.strip())
 
         # Case when filename is "xxx => xxx"
         else:
+            if filename.count("=>") > 1:
+                raise Exception("Unable to parse the filename {}".format(filename))
+
             ori_name, rename = filename.split(rename_sign)
             ori_name, rename = ori_name.strip(), rename.strip()
         return ori_name, rename
@@ -463,7 +470,6 @@ class FileReader(BaseReader):
             for lang in langs:
                 if lang not in files:
                     files[lang] = {}
-        return commits
 
     def get_sources(self, commits):
         """
@@ -555,5 +561,3 @@ class FileReader(BaseReader):
                     # Target file with last commit time earlier than source file is "updated"
                     else:
                         files[lang]["status"] = "updated"
-        
-        return commits

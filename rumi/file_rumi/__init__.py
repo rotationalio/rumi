@@ -13,5 +13,5 @@ identifies new source files and displays the translation needs.
 # Imports
 ##########################################################################
 
-from rumi.file_rumi import reader
-from rumi.file_rumi import reporter
+from .reader import *
+from .reporter import *

@@ -96,3 +96,38 @@ def sources(request):
 
     sources = {"file.md": "fr"}
     request.cls.sources = sources
+
+@pytest.fixture(scope="class")
+def stats_table(request):
+    """
+    Expected print out of stats table.
+    """
+    rows = [
+        "| Target Language   |   Total |   Open |   Updated |   Completed |",
+        "|-------------------+---------+--------+-----------+-------------|",
+        "| fr                |       0 |      0 |         0 |           0 |",
+        "| en                |       1 |      0 |         0 |           1 |",
+        "| zh                |       1 |      0 |         1 |           0 |",
+        "| ja                |       1 |      1 |         0 |           0 |"
+    ]
+
+    table = "\n".join(rows) + "\n"
+
+    request.cls.stats_table = table
+
+@pytest.fixture(scope="class")
+def details_table(request):
+    """
+    Expected print out of details table.
+    """
+    rows = [
+        "| File    | Status    | Source Language   |   Word Count | Target Language   | Percent Completed   | Percent Updated   |",
+        "|---------+-----------+-------------------+--------------+-------------------+---------------------+-------------------|",
+        "| file.md | completed | fr                |            4 | en                | 100.0%              | 0%                |",
+        "| file.md | updated   | fr                |            4 | zh                | 50.0%               | 50.0%             |",
+        "| file.md | open      | fr                |            4 | ja                | 0%                  | 100.0%            |",
+    ]
+
+    table = "\n".join(rows) + "\n"
+   
+    request.cls.details_table = table

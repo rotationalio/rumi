@@ -23,7 +23,7 @@ from rumi.file_rumi.reporter import FileReporter
 ##########################################################################
 
 
-@pytest.mark.usefixtures("commits_status")
+@pytest.mark.usefixtures("commits_status", "stats_table", "details_table")
 class TestFileReporter:
     def test_get_stats(self):
         """
@@ -39,13 +39,17 @@ class TestFileReporter:
         }
         assert got == want
 
-    def test_print_stats(self):
+    def test_print_stats(self, capsys):
         """
         Assert reporter.stats() prints with no error.
         """
         reporter = FileReporter()
         stats = reporter.get_stats(self.commits_status)
         reporter.print_stats(stats)
+
+        captured = capsys.readouterr()
+
+        assert captured.out == self.stats_table
 
     def generate_fixture(self, tmpdir):
         """
@@ -109,7 +113,7 @@ class TestFileReporter:
         ]
         assert got == want
 
-    def test_print_details(self, tmpdir):
+    def test_print_details(self, tmpdir, capsys):
         """
         Assert reporter.detail() prints with no error.
         """
@@ -119,6 +123,10 @@ class TestFileReporter:
 
         details = reporter.get_details(self.commits_status)
         reporter.print_details(details)
+
+        captured = capsys.readouterr()
+
+        assert captured.out == self.details_table
 
     def test_word_count(self, tmpdir):
         """
