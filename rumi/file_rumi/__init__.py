@@ -1,17 +1,16 @@
-# rumi
-# Static site translation monitoring
+# rumi.file_rumi
+# File-based translation monitoring
 #
 # Author: Tianshu Li
 # Created: Oct 28, 2021
 
 """
-A static site translation monitoring tool that reads github history,
-identifies new source files and displays the translation needs.
+File-based translation monitoring, especially for hugo static sites.
 """
 
 ##########################################################################
 # Imports
 ##########################################################################
 
-from .reader import GitReader
-from .reporter import StatusReporter
+from .reader import *
+from .reporter import *
