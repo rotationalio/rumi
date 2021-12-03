@@ -1,0 +1,29 @@
+name: File-based translation monitoring
+on: push
+
+jobs:
+  rumi:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Clone target repository
+        run: |
+          git clone https://github.com/rotationalio/rotational.io.git
+
+      - name: Run Action
+        uses: actions/file-rumi@v2
+        with: 
+          repo-token: ${{ secrets.GITHUB_TOKEN }}
+          repo_path: "rotational.io"
+          branch: "main"
+          content_paths: "content"
+          extensions: ".md"
+          target_files: "README.md"
+          pattern: "folder/"
+          langs: ""
+          src_lang: "en"
+          detail_src_lang: ""
+          detail_tgt_lang: ""
+          stats_mode: "True"
+          details_mode: "True"
+        
+
