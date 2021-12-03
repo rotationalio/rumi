@@ -10,7 +10,7 @@ jobs:
           git clone https://github.com/rotationalio/rotational.io.git
 
       - name: Run Action
-        uses: tl6kk/rumi_action@v5
+        uses: tl6kk/rumi_action@main
         with: 
           repo-token: ${{ secrets.GITHUB_TOKEN }}
           repo_path: "rotational.io"
