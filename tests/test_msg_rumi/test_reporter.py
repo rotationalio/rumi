@@ -23,7 +23,10 @@ from rumi.msg_rumi.reporter import MsgReporter
 ##########################################################################
 
 
-@pytest.mark.usefixtures("commits", "src_lang", "old_trans", "add_trans", "new_trans")
+@pytest.mark.usefixtures(
+    "commits", "src_lang", "old_trans", "add_trans", "new_trans",
+    "stats_table", "details_table"
+)
 class TestMsgReporter:
     def test_get_stats(self):
         """
@@ -58,23 +61,30 @@ class TestMsgReporter:
 
         assert want_details == got_details
 
-    def test_stats(self):
+    def test_print_stats(self, capsys):
         """
         Assert reporter.stats() prints with no error.
         """
 
         reporter = MsgReporter()
         stats = reporter.get_stats(self.commits, self.src_lang)
-        reporter.stats(stats)
+        reporter.print_stats(stats)
 
-    def test_detail(self):
+        captured = capsys.readouterr()
+
+        assert captured.out == self.stats_table
+    def test_print_details(self, capsys):
         """
         Assert reporter.detail() prints with no error.
         """
 
         reporter = MsgReporter()
         details = reporter.get_details(self.commits, self.src_lang)
-        reporter.details(details)
+        reporter.print_details(details)
+
+        captured = capsys.readouterr()
+
+        assert captured.out == self.details_table
 
     def test_download_needs(self, tmpdir):
         """

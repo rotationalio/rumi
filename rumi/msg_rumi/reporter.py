@@ -185,7 +185,7 @@ class MsgReporter:
 
         return details
 
-    def stats(self, stats):
+    def print_stats(self, stats):
         """
         Print out a summary of the translation status including number of message
         missing and word count.
@@ -220,7 +220,7 @@ class MsgReporter:
             )
         )
 
-    def details(self, details):
+    def print_details(self, details):
         """
         Print out the details of messages needing translations for each language
         and provide word count.

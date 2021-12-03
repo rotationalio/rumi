@@ -36,13 +36,13 @@ class MsgReader(BaseReader):
         Path to the repository for translation monitoring.
     branch: string, default: "main"
         Name of the branch to read the github history from. Default to "main".
-    content_path: string, default: "content/"
-        Paths from the root of the repository to the directory that contains
-        contents for translation, joined by space, e.g., "content/
-        data/ i18n/". Default uses the "content/" folder.
-    extension: string, default: ".md"
-        Extensions of the target files for translation monitoring, joined by
-        space. Defult monitoring translation of the markdown files.
+    content_paths: list, default: ["content"]
+        List of paths from the root of the repository to the directory that 
+        contains contents for translation, e.g., ["content", "data", "i18n"]. 
+        Default uses the "content" folder.
+    extensions: list, default: [".md"]
+        List of extensions of the target files for translation monitoring. 
+        Defult monitoring translation of the markdown files.
     src_lang: string, default: "en"
         Source language as set up with lingui.js.
     """
@@ -51,14 +51,14 @@ class MsgReader(BaseReader):
         self,
         repo_path="./",
         branch="main",
-        content_path="content/",
-        extension=".md",
+        content_paths=["content"],
+        extensions=[".md"],
         src_lang="en",
     ) -> None:
 
         super().__init__(
-            content_path=content_path,
-            extension=extension,
+            content_paths=content_paths.copy(),
+            extensions=extensions.copy(),
             repo_path=repo_path,
             branch=branch,
         )

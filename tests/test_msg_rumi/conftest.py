@@ -151,3 +151,42 @@ def new_trans(request):
     result += '~msgid "deprecated msgid should not be inserted"\n~msgstr "deprecated translation"\n'
 
     request.cls.new_trans = result
+
+@pytest.fixture(scope="class")
+def stats_table(request):
+    """
+    Expected print out of stats table.
+    """
+    
+    rows = [
+        "| Language   |   Total |   Open |   Updated |   Completed |",
+        "|------------+---------+--------+-----------+-------------|",
+        "| en         |       2 |      0 |         0 |           0 |",
+        "| fr         |       2 |      1 |         1 |           0 |",
+        "| ja         |       2 |      0 |         1 |           1 |"
+    ]
+
+    table = "\n".join(rows) + "\n"
+
+    request.cls.stats_table = table
+
+@pytest.fixture(scope="class")
+def details_table(request):
+    """
+    Expected print out of details table.
+    """
+    rows = [
+        "----------------------------------------------------------------------",
+        "en Open: 1",
+        "message",
+        "----------------------------------------------------------------------",
+        "fr Open: 1",
+        "message",
+        "----------------------------------------------------------------------",
+        "ja Open: 0",
+        "----------------------------------------------------------------------",
+    ]
+
+    table = "\n".join(rows) + "\n"
+
+    request.cls.details_table = table
