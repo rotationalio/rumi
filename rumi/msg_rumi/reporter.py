@@ -250,7 +250,7 @@ class MsgReporter:
 
         print("-" * 70)
 
-    def download_needs(self, details, lang, path="./"):
+    def download_needs(self, details, lang, path="."):
         """
         Writes the msgid that needs to be translated into a .txt file for each
         language.

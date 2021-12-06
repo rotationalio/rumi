@@ -1,4 +1,4 @@
-# rumi.test_file_rumi.conftest
+# tests.test_file_rumi.conftest
 # Create fixtures for testing rumi's file-based translation monitoring
 #
 # Author: Tianshu Li

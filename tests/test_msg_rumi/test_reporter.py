@@ -1,4 +1,4 @@
-# rumi.test_msg_rumi.test_reporter
+# tests.test_msg_rumi.test_reporter
 # Test the reporter for message-based translation monitoring
 #
 # Author: Tianshu Li

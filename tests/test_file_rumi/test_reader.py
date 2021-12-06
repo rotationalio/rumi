@@ -1,4 +1,4 @@
-# rumi.test_file_rumi.test_reader
+# tests.test_file_rumi.test_reader
 # Test the reader for file-based translation monitoring
 #
 # Author: Tianshu Li
@@ -13,9 +13,11 @@ Test the reader for file-based translation monitoring
 ##########################################################################
 
 
+import re
 import git
 import time
 import pytest
+import shutil
 
 from datetime import datetime
 from rumi.file_rumi.reader import FileReader
@@ -68,8 +70,7 @@ class TestFileReader:
             reader = FileReader()
             reader.process_rename(badfilename)
 
-    def generate_fixtures(self, tmpdir, pattern):
-        repo_name = "msg_reader_repo"
+    def generate_fixtures(self, tmpdir, repo_name, pattern):
         repo_path = tmpdir / repo_name
         repo = git.Repo.init(repo_path)
 
@@ -129,7 +130,9 @@ class TestFileReader:
         Assert git history is correctly parsed into a commit dictionary.
         """
 
-        repo_path, ts1, ts2 = self.generate_fixtures(tmpdir, pattern)
+        repo_path, ts1, ts2 = self.generate_fixtures(
+            tmpdir, "test_{}_repo".format(re.sub('[^a-zA-Z]+', '', pattern)), pattern
+        )
 
         reader = FileReader(
             content_paths=["content"],
@@ -137,9 +140,12 @@ class TestFileReader:
             repo_path=repo_path,
             branch="test",
             pattern=pattern,
+            use_cache=True,
         )
 
         got = reader.parse_history()
+        # Need to remove fixture repository after test
+        shutil.rmtree(reader.cache.cache_dir)
 
         want = {
             "test_content.md": {

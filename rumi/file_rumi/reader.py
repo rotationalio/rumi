@@ -17,6 +17,7 @@ import re
 
 from pathlib import Path
 from datetime import datetime
+from rumi.cache import Cache
 from rumi.base_reader import BaseReader
 
 # Language Codes
@@ -238,6 +239,8 @@ class FileReader(BaseReader):
         current repository for monitoring.
     src_lang: string, default: "en"
         Default source language set by user.
+    use_cache: bool, default: True
+        Whether to use cached commit history datastructure. 
     """
 
     def __init__(
@@ -249,6 +252,7 @@ class FileReader(BaseReader):
         extensions=[".md"],
         pattern="folder/",
         src_lang="en",
+        use_cache=True
     ):
         super().__init__(
             content_paths=content_paths.copy(),
@@ -260,7 +264,14 @@ class FileReader(BaseReader):
         self.pattern = pattern
         self.src_lang = src_lang
         # Pool of target languages to look for
-        self.langs = set(langs.split(" ")) if langs else ALL_LANGS
+        self.lang_pool = set(langs.split(" ")) if langs else ALL_LANGS
+        # Specified target languages
+        self.langs = langs.split(" ") if langs else []
+
+        self.use_cache = use_cache
+        if self.use_cache:
+            repo_name = self.repo_path.stem
+            self.cache = Cache(repo_name=repo_name, which_rumi="file")
 
     def process_rename(self, filename):
         """
@@ -325,12 +336,16 @@ class FileReader(BaseReader):
             The basename is the name of the content that is common among languages.
         """
         repo = self.get_repo()
-        # TODO: update with caching mechanism
-
-        commits = {}
 
         # Iterate through commits from the first to the last
-        iter = reversed(list(repo.iter_commits(paths=self.targets)))
+        if self.use_cache:
+            commits = self.cache.load_cache()
+            iter = reversed(list(repo.iter_commits(paths=self.targets, since=self.cache.latest_date)))
+        else:
+            commits = {}
+            iter = reversed(list(repo.iter_commits(paths=self.targets)))
+
+        
 
         for commit in iter:
 
@@ -392,6 +407,9 @@ class FileReader(BaseReader):
         # Set translation status for each locale of each basename
         self.set_status(commits, sources)
 
+        if self.use_cache:
+            self.cache.write_cache(commits)
+
         return commits
 
     def parse_base_lang(self, file_name):
@@ -415,11 +433,11 @@ class FileReader(BaseReader):
         if self.pattern == "folder/":
             # In this pattern, lang (locale) is one of the directory name
             for dir_name in file_name.parts:
-                if dir_name in self.langs:
+                if dir_name in self.lang_pool:
                     lang = dir_name
                     base_name = file_name.name
                     break
-            if not lang in self.langs:
+            if not "lang" in locals() or lang not in self.lang_pool:
                 raise Exception("Unable to parse file {}".format(file_name))
 
         elif self.pattern == ".lang":
@@ -428,11 +446,11 @@ class FileReader(BaseReader):
 
             for ext in extensions:
 
-                if ext[1:] in self.langs:
+                if ext[1:] in self.lang_pool:
                     lang = ext[1:]
                     break
             
-            if not lang in self.langs:
+            if not "lang" in locals() or not lang in self.lang_pool:
                 raise Exception("Unable to parse file {}".format(file_name))
 
             base_name = file_name.name.replace(ext, "")
@@ -452,7 +470,7 @@ class FileReader(BaseReader):
             Set of all language codes contained and monitored in the repository.
         """
 
-        langs = []
+        langs = self.langs
         for base_file in commits:
             langs.extend(list(commits[base_file].keys()))
 

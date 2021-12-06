@@ -1,4 +1,4 @@
-# rumi.test_base_reader
+# tests.test_base_reader
 # Test the base git history reader
 #
 # Author: Tianshu Li

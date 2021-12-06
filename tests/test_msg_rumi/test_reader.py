@@ -1,4 +1,4 @@
-# rumi.test_msg_rumi.test_reader
+# tests.test_msg_rumi.test_reader
 # Test the reader for message-based translation monitoring
 #
 # Author: Tianshu Li
@@ -15,6 +15,7 @@ Test the reader for message-based translation monitoring
 
 import git
 import time
+import shutil
 
 from datetime import datetime
 from rumi.msg_rumi.reader import MsgReader
@@ -108,9 +109,13 @@ class TestMsgReader:
             src_lang="en",
             repo_path=repo_path,
             branch="test",
+            use_cache=True
         )
 
         got = reader.parse_history()
+        # Need to remove fixture repository after test 
+        shutil.rmtree(reader.cache.cache_dir)
+
         want = {
             '"new msg"': {
                 "en": {

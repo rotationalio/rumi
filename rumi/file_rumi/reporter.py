@@ -16,6 +16,8 @@ Reporter for file-based translation monitoring
 from pathlib import Path
 from tabulate import tabulate
 
+from rumi.file_rumi.reader import FileReader
+
 
 ##########################################################################
 # Class FileReporter
@@ -317,6 +319,3 @@ class FileReporter:
         
         return pu, pc
 
-        
-
-        

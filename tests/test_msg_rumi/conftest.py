@@ -1,4 +1,4 @@
-# rumi.test_msg_rumi.conftest
+# tests.test_msg_rumi.conftest
 # Create fixtures for testing rumi's message-based translation monitoring
 #
 # Author: Rebecca Bilbro

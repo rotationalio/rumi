@@ -1,4 +1,4 @@
-# rumi.test_file_rumi.test_reporter
+# tests.test_file_rumi.test_reporter
 # Test the reporter for file-based translation monitoring
 #
 # Author: Tianshu Li
@@ -16,7 +16,7 @@ Test the reporter for file-based translation monitoring
 import pytest
 
 from rumi.file_rumi.reporter import FileReporter
-
+from rumi.file_rumi.reader import FileReader
 
 ##########################################################################
 # FileReporter Test Cases
