@@ -39,7 +39,7 @@ class Cache:
     def __init__(self, repo_name, which_rumi) -> None:
         self.repo_name = repo_name
         self.which_rumi = which_rumi
-        self.date_format = "%Y-%m-%d %H:%M:%S"
+        self.date_format = "%Y-%m-%d-%H-%M-%S"
         self.cache_dir = os.path.join("cache", which_rumi, repo_name)
        
         if not os.path.isdir(self.cache_dir):
