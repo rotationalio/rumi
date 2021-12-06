@@ -13,6 +13,7 @@ Test the reader for message-based translation monitoring
 ##########################################################################
 
 
+import os
 import git
 import time
 import shutil
@@ -119,13 +120,13 @@ class TestMsgReader:
         want = {
             '"new msg"': {
                 "en": {
-                    "filename": "locales/en/messages.po",
+                    "filename": os.path.join("locales", "en", "messages.po"),
                     "ft": ts[0],
                     "lt": ts[3],
                     "history": [(ts[0], '"new msg"'), (ts[3], '"deleted"')],
                 },
                 "fr": {
-                    "filename": "locales/fr/messages.po",
+                    "filename": os.path.join("locales", "fr", "messages.po"),
                     "ft": ts[0],
                     "lt": ts[3],
                     "history": [
@@ -143,7 +144,7 @@ class TestMsgReader:
         """
         Assert correct language is parsed from filename.
         """
-        filename = "web/src/locales/en/messages.po"
+        filename = os.path.join("web", "src", "locales", "en", "messages.po")
         reader = MsgReader(content_paths=["locales"], extensions=[".po"], src_lang="en")
         lang = reader.parse_lang(filename)
 

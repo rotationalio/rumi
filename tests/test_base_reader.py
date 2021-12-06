@@ -13,6 +13,7 @@ Test the base git history reader
 ##########################################################################
 
 
+import os
 import git
 import pytest
 
@@ -85,7 +86,7 @@ class TestBaseReader:
 
         # Asserting only files in correct path with correct extension
         # are identified as reader.targets
-        assert reader.targets == {"content/correct.c"}
+        assert reader.targets == {os.path.join("content", "correct.c")}
 
     def test_validate_repo_path(self, tmpdir):
         """

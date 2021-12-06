@@ -12,6 +12,8 @@ Create fixtures for testing rumi's file-based translation monitoring
 # Imports
 ##########################################################################
 
+
+import os
 import pytest
 
 
@@ -29,19 +31,19 @@ def commits_no_status(request):
     commits = {
         "file.md": {
             "fr": {
-                "filename": "content/fr/file.md",
+                "filename": os.path.join("content", "fr", "file.md"),
                 "ft": 0.1,
                 "lt": 0.3,
                 "history": {0.1: [2, 0, 2], 0.3: [2, 0, 4]},
             },
             "en": {
-                "filename": "content/fr/file.md",
+                "filename": os.path.join("content", "en", "file.md"),
                 "ft": 0.1,
                 "lt": 0.3,
                 "history": {0.1: [2, 0, 2], 0.3: [2, 0, 4]},
             },
             "zh": {
-                "filename": "content/zh/file.md",
+                "filename": os.path.join("content", "zh", "file.md"),
                 "ft": 0.2,
                 "lt": 0.2,
                 "history": {0.2: [2, 0, 2]},
@@ -61,21 +63,21 @@ def commits_status(request):
     commits = {
         "file.md": {
             "fr": {
-                "filename": "content/fr/file.md",
+                "filename": os.path.join("content", "fr", "file.md"),
                 "ft": 0.1,
                 "lt": 0.3,
                 "history": {0.1: [2, 0, 2], 0.3: [2, 0, 4]},
                 "status": "source",
             },
             "en": {
-                "filename": "content/fr/file.md",
+                "filename": os.path.join("content", "en", "file.md"),
                 "ft": 0.1,
                 "lt": 0.3,
                 "history": {0.1: [2, 0, 2], 0.3: [2, 0, 4]},
                 "status": "completed",
             },
             "zh": {
-                "filename": "content/zh/file.md",
+                "filename": os.path.join("content", "zh", "file.md"),
                 "ft": 0.2,
                 "lt": 0.2,
                 "history": {0.2: [2, 0, 2]},

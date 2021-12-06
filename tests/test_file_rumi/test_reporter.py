@@ -13,6 +13,7 @@ Test the reporter for file-based translation monitoring
 ##########################################################################
 
 
+import os
 import pytest
 
 from rumi.file_rumi.reporter import FileReporter
@@ -66,7 +67,7 @@ class TestFileReporter:
         # Make source file for testing word count
         src_path = content_path / "fr"
         src_path.mkdir()
-        src_file = repo_path / "content/fr/file.md"
+        src_file = repo_path / os.path.join("content", "fr", "file.md")
         src_file.write_text("line1\nline2\nline3\nline4\n", encoding="utf-8")
 
         return repo_path

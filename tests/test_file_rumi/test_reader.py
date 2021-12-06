@@ -13,6 +13,7 @@ Test the reader for file-based translation monitoring
 ##########################################################################
 
 
+import os
 import re
 import git
 import time
@@ -33,11 +34,11 @@ class TestFileReader:
     @pytest.mark.parametrize(
         "filename, ori_name, rename",
         [
-            ("content/file.md", "content/file.md", None),
+            (os.path.join("content", "file.md"), os.path.join("content", "file.md"), None),
             (
-                "content/{ english => en }/file.md",
-                "content/english/file.md",
-                "content/en/file.md",
+                os.path.join("content", "{ english => en }", "file.md"),
+                os.path.join("content", "english", "file.md"),
+                os.path.join("content", "en", "file.md"),
             ),
             ("file1.md => file2.md", "file1.md", "file2.md"),
             # Case when filename does not contain rename sign
@@ -59,7 +60,7 @@ class TestFileReader:
         "badfilename",
         [   
             # Case when filename has multiple rename pattern { => } 
-            "{ content/{ english => en } => newdir } /file.md",
+            os.path.join("{ content", "{ english => en } => newdir } ", "file.md"),
         
             # Case when filename has multiple rename sign =>
             "file1.md => file=>2.md"
@@ -121,8 +122,8 @@ class TestFileReader:
     @pytest.mark.parametrize(
         "pattern, en_fname, fr_fname",
         [
-            ("folder/", "content/en/test_content.md", "content/fr/test_content.md"),
-            (".lang", "content/test_content.en.md", "content/test_content.fr.md"),
+            ("folder/", os.path.join("content", "en", "test_content.md"), os.path.join("content", "fr", "test_content.md")),
+            (".lang", os.path.join("content", "test_content.en.md"), os.path.join("content", "test_content.fr.md")),
         ],
     )
     def test_parse_history(self, tmpdir, pattern, en_fname, fr_fname):
@@ -171,8 +172,8 @@ class TestFileReader:
     @pytest.mark.parametrize(
         "pattern, fname, basename, lang",
         [
-            ("folder/", "content/en/file.md", "file.md", "en"),
-            (".lang", "content/file.en.md", "file.md", "en"),
+            ("folder/", os.path.join("content", "en", "file.md"), "file.md", "en"),
+            (".lang", os.path.join("content", "file.en.md"), "file.md", "en"),
         ],
     )
     def test_parse_base_lang(self, pattern, fname, basename, lang):
