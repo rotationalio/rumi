@@ -17,7 +17,7 @@ import os
 import pytest
 
 from rumi.file_rumi.reporter import FileReporter
-from rumi.file_rumi.reader import FileReader
+
 
 ##########################################################################
 # FileReporter Test Cases
