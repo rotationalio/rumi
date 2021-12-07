@@ -9,12 +9,12 @@ Rumi currently supports two workflows for translation monitoring: file-based mon
 ## File-based Translation Monitoring Workflow
 
 **File-based translation flow exemplified with Hugo site**
-![](https://raw.githubusercontent.com/rotationalio/rumi/main/docs/images/readme/hugo-flow.png?token=ADVLS6MXMRDY2AKTXFYG2MTBV4ANG)
+![](docs/images/readme/hugo_flow.png)
 
 ### 1. Create reader
 
 ```python
-reader = GitReader(
+reader = FileReader(
         repo_path=".",
         branch="main",
         langs="",
@@ -37,7 +37,7 @@ Parameters:
 `src_lang`: Default source language set by user.
 `use_cache`: Whether to use cached commit history datastructure.
 
-### 2. Set Target
+### 2. Set targets
 
 The target files for translation monitoring are initialized using `content_paths` and `extensions`, and it can also be specified by adding or deleting single filename.
 
@@ -75,18 +75,20 @@ stats = reporter.get_stats(commits)
 reporter.print_stats(stats)
 
 """
-    | Target Language    |   Total  |   Open |   Updated |   Completed |
-    |--------------------+----------+--------+-----------+-------------|
-    | fr                 |        0 |      0 |         0 |           0 |
-    | en                 |       17 |     12 |         1 |           4 |
-    | zh                 |        0 |      0 |         0 |           0 |
+    | Target Language   |   Total |   Open |   Updated |   Completed |
+    |-------------------+---------+--------+-----------+-------------|
+    | fr                |       0 |      0 |         0 |           0 |
+    | en                |       1 |      0 |         0 |           1 |
+    | zh                |       1 |      0 |         1 |           0 |
+    | ja                |       1 |      1 |         0 |           0 |
 """
 ```
 
-detail mode: displays translation work required for each target file together with the word count. E.g.:
+detail mode: displays translation work required for each target file together with more details. E.g.:
 
 ```python
-reporter.detail(commits, origins, langs)
+details = reporter.get_details(commits)
+reporter.print_details(details)
 
 """
 | File    | Status    | Source Language | Word Count | Target Language | Percent Completed | Percent Updated |
@@ -97,42 +99,9 @@ reporter.detail(commits, origins, langs)
 """
 ```
 
-### 6. Github Action
+Here `Word Count` reports number of words in the source file. `Percent Completed` is estimated by number of lines in the translation file divided by that in the source file. `Percent Updated` is number of lines inserted in the source file since the latest edit of the translation file.
 
-To setup your repository with Rumi github action so that stats and details are automated on push, include the following code in `.github/workflow/rumi.yaml`:
-
-```yaml
-name: Rumi translation monitoring
-on: push
-
-jobs:
-  rumi:
-    runs-on: ubuntu-latest
-    steps:
-      - name: Clone target repository
-        run: |
-          git clone [url of the target repository]
-
-      - name: Run Action 
-        uses: tl6kk/rumi_action@main # to be changed after rumi publication
-        with: 
-          which_rumi: "file"
-          repo_path: "path_to_repo"
-          branch: "main"
-          content_paths: "content1, content2, content3"
-          extensions: ".md .txt"
-          target_files: "target1, target2, target3"
-          pattern: "folder/"  
-          langs: ""
-          src_lang: "en"
-          detail_src_lang: ""
-          detail_tgt_lang: ""
-          stats_mode: "True"
-          details_mode: "True"
-          use_cache: "True"
-```
-
-### 7. Additional resources for the SDE steps
+### 6. Additional resources for the SDE steps
 
 For more about setting up a Hugo site, check out the documentation about [Hugo in multilingual mode](https://gohugo.io/content-management/multilingual/).
 
@@ -140,43 +109,46 @@ For more about setting up a Hugo site, check out the documentation about [Hugo i
 ## Message-based Translation Monitoring Workflow
 
 **Message-based translation flow exemplified with React App**
-![](https://raw.githubusercontent.com/rotationalio/rumi/main/docs/images/readme/react-flow.png?token=ADVLS6M34UDADK7JFLS3ZPTBV4AXY)
+![](docs/images/readme/react_flow.png)
 
-### 1. Create msg reader
+### 1. Create reader
 
 ```python
 reader = MsgReader(
     repo_path=".",
     branch="main",
     content_paths=["content"],
-    extensions=[".md"],
+    extensions=[".po"],
     src_lang="en",
     use_cache=True
     )
 ```
 
-### 2. Calculate commits
+### 2. Set targets
+
+```python
+reader.add_target(filename)
+reader.del_target(filename)
+```
+
+### 3. Calculate commits
 
 ```python
 commits = reader.parse_history()
 ```
 
-### 3. Create reporter
+### 4. Create reporter
 
 ```python
-reporter = MsgReporter(
-    repo_path=reader.repo_path,
-    src_lang=detail_src_lang,
-    tgt_lang=detail_tgt_lang
-)
-
+reporter = MsgReporter()
 ```
 
-### 3. Report stats and details
+### 5. Report stats and details
 
-stats mode: Print out a summary of the translation status including number of message missing and word count.
+stats mode: Print out a summary of the translation.
+
 ```python
-stats = reporter.get_stats(commits)
+stats = reporter.get_stats(commits, src_lang)
 reporter.print_stats(stats)
 
 """
@@ -188,11 +160,10 @@ reporter.print_stats(stats)
 """
 ```
 
-detail mode: Print out the details of messages needing translations for each language
-and provide word count.
+detail mode: Print out the details of messages needing translations for each language and provide word count.
 
 ```python
-details = reporter.get_details(commits)
+details = reporter.get_details(commits, src_lang)
 reporter.print_details(details)
 
 """
@@ -213,9 +184,34 @@ reporter.print_details(details)
 """
 ```
 
-### 4. Github Action
+### 6. Rumi Download
 
-To setup your repository with Rumi github action so that stats and details are automated on push, include the following code in `.github/workflow/rumi.yaml`:
+Rumi can help you download the new messages from `Lingui Extract` results:
+
+```python
+reporter.download_needs(details, lang, path=".")
+```
+
+### 7. Rumi Insert Translated
+
+Rumi can also insert the new translations back into the old ones, to support the next `Lingui Compile` step.
+
+```python
+reporter.insert_translations("new_translations.txt", "old_messages.po")
+
+```
+
+### 8. Additional Resources for the SDE steps
+
+Here are some additional resources for getting set up with Lingui on your React project:
+  - UI Dev: Setup Lingui.js
+    - Installation: [Setup Lingui with React project](https://lingui.js.org/tutorials/setup-react.html)
+    - Wrap Messages: Wrap UI text message according to [Lingui patterns](https://lingui.js.org/tutorials/react-patterns.html)
+  - Lingui Extract: `npm run extract` or `yarn extract`
+  - Lingui Compile: `npm run compile` or `yarn compile`
+
+## Github Action
+
 
 ```yaml
 name: Rumi translation monitoring
@@ -232,42 +228,18 @@ jobs:
       - name: Run Action 
         uses: tl6kk/rumi_action@main # to be changed after rumi publication
         with: 
-          which_rumi: "msg"
+          which_rumi: "file" # "file" for file-based or "msg" for message-based
           repo_path: "path_to_repo"
           branch: "main"
-          content_paths: "locales"
-          extensions: ".po"
-          target_files: ""
+          content_paths: "content1, content2, content3"
+          extensions: ".md, .txt"
+          target_files: "target1, target2, target3"
+          pattern: "folder/"  # "folder/" or ".lang" depending on the setup of file-based project
+          langs: "en fr zh ja" # You can specify the languages to monitor with language codes
           src_lang: "en"
           detail_src_lang: ""
           detail_tgt_lang: ""
           stats_mode: "True"
           details_mode: "True"
           use_cache: "True"
-```
-
-### 5. Rumi Download
-
-Rumi can help you download the new messages from `Lingui Extract` results:
-
-```python
-reporter.download_needs(details, lang, path=".")
-```
-
-### 6. Rumi Insert Translated
-
-Rumi can also insert the new translations back into the old ones, to support the next `Lingui Compile` step.
-
-```python
-reporter.insert_translations("new_translations.txt", "old_messages.po")
-
-```
-
-### 7. Additional Resources for the SDE steps
-
-Here are some additional resources for getting set up with Lingui on your React project:
-  - UI Dev: Setup Lingui.js
-    - Installation: [Setup Lingui with React project](https://lingui.js.org/tutorials/setup-react.html)
-    - Wrap Messages: Wrap UI text message according to [Lingui patterns](https://lingui.js.org/tutorials/react-patterns.html)
-  - Lingui Extract: `npm run extract` or `yarn extract`
-  - Lingui Compile: `npm run compile` or `yarn compile`
+``` 

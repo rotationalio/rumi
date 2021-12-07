@@ -187,8 +187,7 @@ class MsgReporter:
 
     def print_stats(self, stats):
         """
-        Print out a summary of the translation status including number of message
-        missing and word count.
+        Print out a summary of the translation status.
 
         Parameters
         ----------
