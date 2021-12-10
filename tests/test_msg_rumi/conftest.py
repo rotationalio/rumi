@@ -1,4 +1,4 @@
-# rumi.test_msg_rumi.conftest
+# tests.test_msg_rumi.conftest
 # Create fixtures for testing rumi's message-based translation monitoring
 #
 # Author: Rebecca Bilbro
@@ -12,6 +12,8 @@ Create fixtures for testing rumi's message-based translation monitoring
 # Imports
 ##########################################################################
 
+
+import os
 import pytest
 
 
@@ -31,7 +33,7 @@ def commits(request):
         "updated_message": {
             # source
             "en": {
-                "filename": "src/locales/en/messages.po",
+                "filename": os.path.join("src", "locales", "en", "messages.po"),
                 "ft": 1.0,
                 "lt": 2.0,
                 "history": [(1.0, "message"), (2.0, "deleted")],
@@ -39,14 +41,14 @@ def commits(request):
             # hasn't been translated but in "updated" status because the
             # original message were deleted
             "fr": {
-                "filename": "src/locales/fr/messages.po",
+                "filename": os.path.join("src", "locales", "fr", "messages.po"),
                 "ft": 1.0,
                 "lt": 1.0,
                 "history": [(1.0, "")],
             },
             # has been translated but in "updated" status
             "ja": {
-                "filename": "src/locales/ja/messages.po",
+                "filename": os.path.join("src", "locales", "ja", "messages.po"),
                 "ft": 1.0,
                 "lt": 1.5,
                 "history": [(1.0, ""), (1.5, "メッセージ")],
@@ -56,21 +58,21 @@ def commits(request):
         "message": {
             # source
             "en": {
-                "filename": "src/locales/en/messages.po",
+                "filename": os.path.join("src", "locales", "en", "messages.po"),
                 "ft": 1.0,
                 "lt": 1.0,
                 "history": [(1.0, "message")],
             },
             # open
             "fr": {
-                "filename": "src/locales/fr/messages.po",
+                "filename": os.path.join("src", "locales", "fr", "messages.po"),
                 "ft": 1.0,
                 "lt": 1.0,
                 "history": [(1.0, "")],
             },
             # completed
             "ja": {
-                "filename": "src/locales/fr/messages.po",
+                "filename": os.path.join("src", "locales", "ja", "messages.po"),
                 "ft": 1.0,
                 "lt": 2.0,
                 "history": [(1.0, ""), (2.0, "メッセージ")],
@@ -152,23 +154,25 @@ def new_trans(request):
 
     request.cls.new_trans = result
 
+
 @pytest.fixture(scope="class")
 def stats_table(request):
     """
     Expected print out of stats table.
     """
-    
+
     rows = [
         "| Language   |   Total |   Open |   Updated |   Completed |",
         "|------------+---------+--------+-----------+-------------|",
         "| en         |       2 |      0 |         0 |           0 |",
         "| fr         |       2 |      1 |         1 |           0 |",
-        "| ja         |       2 |      0 |         1 |           1 |"
+        "| ja         |       2 |      0 |         1 |           1 |",
     ]
 
     table = "\n".join(rows) + "\n"
 
     request.cls.stats_table = table
+
 
 @pytest.fixture(scope="class")
 def details_table(request):

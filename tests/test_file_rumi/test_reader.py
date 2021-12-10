@@ -1,4 +1,4 @@
-# rumi.test_file_rumi.test_reader
+# tests.test_file_rumi.test_reader
 # Test the reader for file-based translation monitoring
 #
 # Author: Tianshu Li
@@ -13,9 +13,12 @@ Test the reader for file-based translation monitoring
 ##########################################################################
 
 
+import os
+import re
 import git
 import time
 import pytest
+import shutil
 
 from datetime import datetime
 from rumi.file_rumi.reader import FileReader
@@ -31,15 +34,19 @@ class TestFileReader:
     @pytest.mark.parametrize(
         "filename, ori_name, rename",
         [
-            ("content/file.md", "content/file.md", None),
             (
-                "content/{ english => en }/file.md",
-                "content/english/file.md",
-                "content/en/file.md",
+                os.path.join("content", "file.md"),
+                os.path.join("content", "file.md"),
+                None,
+            ),
+            (
+                os.path.join("content", "{ english => en }", "file.md"),
+                os.path.join("content", "english", "file.md"),
+                os.path.join("content", "en", "file.md"),
             ),
             ("file1.md => file2.md", "file1.md", "file2.md"),
             # Case when filename does not contain rename sign
-            ("file1.md file2.md", "file1.md file2.md", None)
+            ("file1.md file2.md", "file1.md file2.md", None),
         ],
     )
     def test_process_rename(self, filename, ori_name, rename):
@@ -55,21 +62,19 @@ class TestFileReader:
 
     @pytest.mark.parametrize(
         "badfilename",
-        [   
-            # Case when filename has multiple rename pattern { => } 
-            "{ content/{ english => en } => newdir } /file.md",
-        
+        [
+            # Case when filename has multiple rename pattern { => }
+            os.path.join("{ content", "{ english => en } => newdir } ", "file.md"),
             # Case when filename has multiple rename sign =>
-            "file1.md => file=>2.md"
-        ]
+            "file1.md => file=>2.md",
+        ],
     )
     def test_parse_rename_fail(self, badfilename):
         with pytest.raises(Exception, match=r"Unable to parse the filename"):
             reader = FileReader()
             reader.process_rename(badfilename)
 
-    def generate_fixtures(self, tmpdir, pattern):
-        repo_name = "msg_reader_repo"
+    def generate_fixtures(self, tmpdir, repo_name, pattern):
         repo_path = tmpdir / repo_name
         repo = git.Repo.init(repo_path)
 
@@ -120,8 +125,16 @@ class TestFileReader:
     @pytest.mark.parametrize(
         "pattern, en_fname, fr_fname",
         [
-            ("folder/", "content/en/test_content.md", "content/fr/test_content.md"),
-            (".lang", "content/test_content.en.md", "content/test_content.fr.md"),
+            (
+                "folder/",
+                os.path.join("content", "en", "test_content.md"),
+                os.path.join("content", "fr", "test_content.md"),
+            ),
+            (
+                ".lang",
+                os.path.join("content", "test_content.en.md"),
+                os.path.join("content", "test_content.fr.md"),
+            ),
         ],
     )
     def test_parse_history(self, tmpdir, pattern, en_fname, fr_fname):
@@ -129,7 +142,9 @@ class TestFileReader:
         Assert git history is correctly parsed into a commit dictionary.
         """
 
-        repo_path, ts1, ts2 = self.generate_fixtures(tmpdir, pattern)
+        repo_path, ts1, ts2 = self.generate_fixtures(
+            tmpdir, "test_{}_repo".format(re.sub("[^a-zA-Z]+", "", pattern)), pattern
+        )
 
         reader = FileReader(
             content_paths=["content"],
@@ -137,9 +152,12 @@ class TestFileReader:
             repo_path=repo_path,
             branch="test",
             pattern=pattern,
+            use_cache=True,
         )
 
         got = reader.parse_history()
+        # Need to remove fixture repository after test
+        shutil.rmtree(reader.cache.cache_dir)
 
         want = {
             "test_content.md": {
@@ -165,15 +183,17 @@ class TestFileReader:
     @pytest.mark.parametrize(
         "pattern, fname, basename, lang",
         [
-            ("folder/", "content/en/file.md", "file.md", "en"),
-            (".lang", "content/file.en.md", "file.md", "en"),
+            ("folder/", os.path.join("content", "en", "file.md"), "file.md", "en"),
+            (".lang", os.path.join("content", "file.en.md"), "file.md", "en"),
         ],
     )
     def test_parse_base_lang(self, pattern, fname, basename, lang):
         """
         Assert basename and lang can be parsed for two patterns.
         """
-        reader = FileReader(content_paths=["content"], extensions=[".md"], pattern=pattern)
+        reader = FileReader(
+            content_paths=["content"], extensions=[".md"], pattern=pattern
+        )
 
         got_basename, got_lang = reader.parse_base_lang(fname)
         assert got_basename == basename

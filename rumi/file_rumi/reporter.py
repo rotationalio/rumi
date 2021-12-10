@@ -16,6 +16,8 @@ Reporter for file-based translation monitoring
 from pathlib import Path
 from tabulate import tabulate
 
+from rumi.file_rumi.reader import FileReader
+
 
 ##########################################################################
 # Class FileReporter
@@ -300,7 +302,7 @@ class FileReporter:
         # pu = 0 and pc = 1 for empty files
         if src_n_lines == 0:
             return 0, 1
-        
+
         # Compute percentage updated: pu
         if tgt_lt >= src_lt:
             pu = 0
@@ -314,9 +316,5 @@ class FileReporter:
 
         # Compute percentage completed: pc
         pc = tgt_n_lines / src_n_lines
-        
+
         return pu, pc
-
-        
-
-        

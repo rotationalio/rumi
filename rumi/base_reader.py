@@ -126,9 +126,9 @@ class BaseReader:
                 if fname == target_fname:
 
                     # Create the Path from the file relative to the repo_path
-                    path = root.joinpath(dir, fname).relative_to(self.repo_path)
+                    path = root.joinpath(fname).relative_to(self.repo_path)
 
-                    self.targets.add(path)
+                    self.targets.add(str(path))
                     return
 
         raise Exception("Please provide a valid file name")
@@ -158,7 +158,7 @@ class BaseReader:
         repo_path: pathlib.Path object
             Validated repository path.
         """
-        repo_path = Path(repo_path)
+        repo_path = Path(repo_path).resolve()
 
         if (not repo_path.exists()) or (not repo_path.is_dir()):
             raise Exception("Please specify a valid repository path")

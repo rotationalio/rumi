@@ -187,8 +187,7 @@ class MsgReporter:
 
     def print_stats(self, stats):
         """
-        Print out a summary of the translation status including number of message
-        missing and word count.
+        Print out a summary of the translation status.
 
         Parameters
         ----------
@@ -250,7 +249,7 @@ class MsgReporter:
 
         print("-" * 70)
 
-    def download_needs(self, details, lang, path="./"):
+    def download_needs(self, details, lang, path="."):
         """
         Writes the msgid that needs to be translated into a .txt file for each
         language.

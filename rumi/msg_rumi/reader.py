@@ -16,6 +16,7 @@ Git history reader for message-based translation monitoring
 import re
 import os
 
+from rumi.cache import Cache
 from datetime import datetime
 from rumi.base_reader import BaseReader
 
@@ -32,7 +33,7 @@ class MsgReader(BaseReader):
 
     Parameters
     ----------
-    repo_path: string, default: "./"
+    repo_path: string, default: "."
         Path to the repository for translation monitoring.
     branch: string, default: "main"
         Name of the branch to read the github history from. Default to "main".
@@ -45,15 +46,18 @@ class MsgReader(BaseReader):
         Defult monitoring translation of the markdown files.
     src_lang: string, default: "en"
         Source language as set up with lingui.js.
+    use_cache: bool, default: True
+        Whether to use cached commit history datastructure. 
     """
 
     def __init__(
         self,
-        repo_path="./",
+        repo_path=".",
         branch="main",
         content_paths=["content"],
         extensions=[".md"],
         src_lang="en",
+        use_cache=True,
     ) -> None:
 
         super().__init__(
@@ -63,6 +67,11 @@ class MsgReader(BaseReader):
             branch=branch,
         )
         self.src_lang = src_lang
+
+        self.use_cache = use_cache
+        if self.use_cache:
+            repo_name = self.repo_path.stem
+            self.cache = Cache(repo_name=repo_name, which_rumi="msg")
 
     def modify_commits(
         self, commits, timestamp, fname, locale, msgid, content, status, kind
@@ -179,11 +188,15 @@ class MsgReader(BaseReader):
             }
         """
         repo = self.get_repo()
-        # TODO: update with caching mechanism
-        commits = {}
 
         # Iterate through commits from the first to the last
-        history = list(repo.iter_commits())
+        if self.use_cache:
+            commits = self.cache.load_cache()
+            history = list(repo.iter_commits(since=self.cache.latest_date))
+        else:
+            commits = {}
+            history = list(repo.iter_commits())
+
         history.reverse()
         history.append(repo.head.commit)
 
@@ -215,6 +228,7 @@ class MsgReader(BaseReader):
                         # Put content into the datastructure
                         fname = item.b_path
                         locale = self.parse_lang(item.b_path)
+
                         commits = self.modify_commits(
                             commits,
                             timestamp,
@@ -225,6 +239,10 @@ class MsgReader(BaseReader):
                             status,
                             kind,
                         )
+
+        if self.use_cache:
+            self.cache.write_cache(commits)
+
         return commits
 
     def parse_lang(self, filename):
