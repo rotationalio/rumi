@@ -24,8 +24,13 @@ from rumi.msg_rumi.reporter import MsgReporter
 
 
 @pytest.mark.usefixtures(
-    "commits", "src_lang", "old_trans", "add_trans", "new_trans",
-    "stats_table", "details_table"
+    "commits",
+    "src_lang",
+    "old_trans",
+    "add_trans",
+    "new_trans",
+    "stats_table",
+    "details_table",
 )
 class TestMsgReporter:
     def test_get_stats(self):
@@ -73,6 +78,7 @@ class TestMsgReporter:
         captured = capsys.readouterr()
 
         assert captured.out == self.stats_table
+
     def test_print_details(self, capsys):
         """
         Assert reporter.detail() prints with no error.

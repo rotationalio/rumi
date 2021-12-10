@@ -154,23 +154,25 @@ def new_trans(request):
 
     request.cls.new_trans = result
 
+
 @pytest.fixture(scope="class")
 def stats_table(request):
     """
     Expected print out of stats table.
     """
-    
+
     rows = [
         "| Language   |   Total |   Open |   Updated |   Completed |",
         "|------------+---------+--------+-----------+-------------|",
         "| en         |       2 |      0 |         0 |           0 |",
         "| fr         |       2 |      1 |         1 |           0 |",
-        "| ja         |       2 |      0 |         1 |           1 |"
+        "| ja         |       2 |      0 |         1 |           1 |",
     ]
 
     table = "\n".join(rows) + "\n"
 
     request.cls.stats_table = table
+
 
 @pytest.fixture(scope="class")
 def details_table(request):

@@ -57,7 +57,7 @@ class MsgReader(BaseReader):
         content_paths=["content"],
         extensions=[".md"],
         src_lang="en",
-        use_cache=True
+        use_cache=True,
     ) -> None:
 
         super().__init__(
@@ -188,7 +188,7 @@ class MsgReader(BaseReader):
             }
         """
         repo = self.get_repo()
-        
+
         # Iterate through commits from the first to the last
         if self.use_cache:
             commits = self.cache.load_cache()
@@ -239,7 +239,7 @@ class MsgReader(BaseReader):
                             status,
                             kind,
                         )
-        
+
         if self.use_cache:
             self.cache.write_cache(commits)
 

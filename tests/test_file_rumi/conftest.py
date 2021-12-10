@@ -99,6 +99,7 @@ def sources(request):
     sources = {"file.md": "fr"}
     request.cls.sources = sources
 
+
 @pytest.fixture(scope="class")
 def stats_table(request):
     """
@@ -110,12 +111,13 @@ def stats_table(request):
         "| fr                |       0 |      0 |         0 |           0 |",
         "| en                |       1 |      0 |         0 |           1 |",
         "| zh                |       1 |      0 |         1 |           0 |",
-        "| ja                |       1 |      1 |         0 |           0 |"
+        "| ja                |       1 |      1 |         0 |           0 |",
     ]
 
     table = "\n".join(rows) + "\n"
 
     request.cls.stats_table = table
+
 
 @pytest.fixture(scope="class")
 def details_table(request):
@@ -131,5 +133,5 @@ def details_table(request):
     ]
 
     table = "\n".join(rows) + "\n"
-   
+
     request.cls.details_table = table

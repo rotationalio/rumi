@@ -39,8 +39,7 @@ def get_version(short=False):
     if __version_info__["releaselevel"] != "final" and not short:
         vers.append(
             "{}{}".format(
-                __version_info__["releaselevel"][0],
-                __version_info__["serial"],
+                __version_info__["releaselevel"][0], __version_info__["serial"],
             )
         )
 

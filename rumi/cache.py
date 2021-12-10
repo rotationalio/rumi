@@ -41,7 +41,7 @@ class Cache:
         self.which_rumi = which_rumi
         self.date_format = "%Y-%m-%d-%H-%M-%S"
         self.cache_dir = os.path.join("cache", which_rumi, repo_name)
-       
+
         if not os.path.isdir(self.cache_dir):
             os.makedirs(self.cache_dir)
         self.latest_date = self.get_latest()
@@ -56,7 +56,7 @@ class Cache:
             Timestamp of the cache commit history in the format of "yyyy-mm-dd HH:MM:SS"
         """
         cache_dates = os.listdir(self.cache_dir)
-        
+
         if len(cache_dates) == 0:
             latest_date = "1900-1-1 00:00:00"
         else:
@@ -113,10 +113,7 @@ class Cache:
             }
             The basename is the name of the content that is common among languages.
         """
-        file = os.path.join(
-            self.cache_dir,
-            self.latest_date,
-        )
+        file = os.path.join(self.cache_dir, self.latest_date,)
         if os.path.isfile(file):
             with open(file, "rb") as f:
                 commits = pickle.load(f)

@@ -252,7 +252,7 @@ class FileReader(BaseReader):
         extensions=[".md"],
         pattern="folder/",
         src_lang="en",
-        use_cache=True
+        use_cache=True,
     ):
         super().__init__(
             content_paths=content_paths.copy(),
@@ -263,9 +263,17 @@ class FileReader(BaseReader):
 
         self.pattern = pattern
         self.src_lang = src_lang
-        # Pool of target languages to look for
+        # rumi looks through commit history and can detect languages based on
+        # filename. The detected language are saved to the commits dictionary in
+        # basename: {locale: {}}. The lang_pool is the pool of valid languages to
+        # support detecting. User can specify any string as languages as long as
+        # it's consistent with filenames in their repository. If not specified,
+        # pool will be set with lower case language codes.
         self.lang_pool = set(langs.split(" ")) if langs else ALL_LANGS
         # Specified target languages
+        # self.langs is needed to keep track of the use specified languages so
+        # that for a totally untranslated repository, with no languages can be
+        # detected, rumi can still display translation status in each target language.
         self.langs = langs.split(" ") if langs else []
 
         self.use_cache = use_cache
@@ -292,7 +300,7 @@ class FileReader(BaseReader):
         # Case when filename is "path/{ xxx => xxx }/file.md"
         if renamed:
             rename_pattern = renamed.group()
-            
+
             if filename.count("=>") > 1:
                 raise Exception("Unable to parse the filename {}".format(filename))
             part1, part2 = rename_pattern[1:-1].split(rename_sign)
@@ -340,12 +348,14 @@ class FileReader(BaseReader):
         # Iterate through commits from the first to the last
         if self.use_cache:
             commits = self.cache.load_cache()
-            iter = reversed(list(repo.iter_commits(paths=self.targets, since=self.cache.latest_date)))
+            iter = reversed(
+                list(
+                    repo.iter_commits(paths=self.targets, since=self.cache.latest_date)
+                )
+            )
         else:
             commits = {}
             iter = reversed(list(repo.iter_commits(paths=self.targets)))
-
-        
 
         for commit in iter:
 
@@ -449,7 +459,7 @@ class FileReader(BaseReader):
                 if ext[1:] in self.lang_pool:
                     lang = ext[1:]
                     break
-            
+
             if not "lang" in locals() or not lang in self.lang_pool:
                 raise Exception("Unable to parse file {}".format(file_name))
 
@@ -484,7 +494,7 @@ class FileReader(BaseReader):
 
         for basefile in commits:
             files = commits[basefile]
-            
+
             for lang in langs:
                 if lang not in files:
                     files[lang] = {}

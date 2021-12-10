@@ -110,11 +110,11 @@ class TestMsgReader:
             src_lang="en",
             repo_path=repo_path,
             branch="test",
-            use_cache=True
+            use_cache=True,
         )
 
         got = reader.parse_history()
-        # Need to remove fixture repository after test 
+        # Need to remove fixture repository after test
         shutil.rmtree(reader.cache.cache_dir)
 
         want = {
