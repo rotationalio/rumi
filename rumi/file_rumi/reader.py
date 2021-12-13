@@ -402,7 +402,7 @@ class FileReader(BaseReader):
                     ]
                 else:
                     commits[base_name][lang] = {
-                        "filename": fname,
+                        "filename": Path(fname),
                         "ft": timestamp,
                         "lt": timestamp,
                         "history": {timestamp: [add, delete, n_lines]},  # handle total

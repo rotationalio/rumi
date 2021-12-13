@@ -233,7 +233,7 @@ class MsgReader(BaseReader):
                         commits = self.modify_commits(
                             commits,
                             timestamp,
-                            fname,
+                            Path(fname),
                             locale,
                             msgid,
                             content,

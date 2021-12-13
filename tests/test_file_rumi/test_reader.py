@@ -20,6 +20,7 @@ import time
 import pytest
 import shutil
 
+from pathlib import Path
 from datetime import datetime
 from rumi.file_rumi.reader import FileReader
 
@@ -127,13 +128,13 @@ class TestFileReader:
         [
             (
                 "folder/",
-                os.path.join("content", "en", "test_content.md"),
-                os.path.join("content", "fr", "test_content.md"),
+                Path("content") / "en" / "test_content.md",
+                Path("content") / "fr" / "test_content.md",
             ),
             (
                 ".lang",
-                os.path.join("content", "test_content.en.md"),
-                os.path.join("content", "test_content.fr.md"),
+                Path("content") / "test_content.en.md",
+                Path("content") / "test_content.fr.md",
             ),
         ],
     )
