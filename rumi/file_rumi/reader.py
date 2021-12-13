@@ -373,7 +373,7 @@ class FileReader(BaseReader):
                 else:
                     fname = ori_name
 
-                if fname not in self.targets:
+                if (Path(fname)) not in self.targets:
                     continue
 
                 add = commit.stats.files[file]["insertions"]

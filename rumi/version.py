@@ -14,10 +14,10 @@ Maintains version and package information for deployment
 
 __version_info__ = {
     "major": 0,
-    "minor": 0,
-    "micro": 1,
+    "minor": 1,
+    "micro": 0,
     "releaselevel": "alpha",
-    "post": 8,
+    "post": 1,
     "serial": 1,
 }
 
