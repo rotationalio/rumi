@@ -29,7 +29,7 @@ from setuptools import find_packages
 ## Basic information
 NAME = "rumi-i18n"
 DESCRIPTION = "A static site translation monitoring tool"
-LONG_DESCRIPTION = "DESCRIPTION.md"
+LONG_DESCRIPTION = "README.md"
 AUTHOR = "Tianshu Li"
 EMAIL = "tianshu@rotational.io"
 LICENSE = "Apache"
