@@ -9,8 +9,7 @@ Rumi currently supports two workflows for translation monitoring: file-based mon
 ## File-based Translation Monitoring Workflow
 
 **File-based translation flow exemplified with Hugo site**
-![](docs/images/readme/hugo_flow.png)
-
+![](https://github.com/rotationalio/rumi/raw/main/docs/images/readme/hugo_flow.png)
 ### 1. Create reader
 
 ```python
