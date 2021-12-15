@@ -87,7 +87,7 @@ class TestBaseReader:
 
         # Asserting only files in correct path with correct extension
         # are identified as reader.targets
-        assert reader.targets == {Path("content")/ "correct.c"}
+        assert reader.targets == {Path("content") / "correct.c"}
 
     def test_validate_repo_path(self, tmpdir):
         """
