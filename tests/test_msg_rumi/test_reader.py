@@ -18,6 +18,7 @@ import git
 import time
 import shutil
 
+from pathlib import Path
 from datetime import datetime
 from rumi.msg_rumi.reader import MsgReader
 
@@ -120,13 +121,13 @@ class TestMsgReader:
         want = {
             '"new msg"': {
                 "en": {
-                    "filename": os.path.join("locales", "en", "messages.po"),
+                    "filename": Path("locales") / "en" / "messages.po",
                     "ft": ts[0],
                     "lt": ts[3],
                     "history": [(ts[0], '"new msg"'), (ts[3], '"deleted"')],
                 },
                 "fr": {
-                    "filename": os.path.join("locales", "fr", "messages.po"),
+                    "filename": Path("locales") / "fr" / "messages.po",
                     "ft": ts[0],
                     "lt": ts[3],
                     "history": [

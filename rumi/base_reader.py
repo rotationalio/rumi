@@ -101,7 +101,7 @@ class BaseReader:
                     # Check the extension, note you may want to use the more complex
                     # path.suffixes for multiple extensions e.g. myfile.en.md
                     if path.suffix in extensions:
-                        target.append(str(path))
+                        target.append(path)
         return set(target)
 
     def is_hidden(self, basename):
@@ -128,7 +128,7 @@ class BaseReader:
                     # Create the Path from the file relative to the repo_path
                     path = root.joinpath(fname).relative_to(self.repo_path)
 
-                    self.targets.add(str(path))
+                    self.targets.add(path)
                     return
 
         raise Exception("Please provide a valid file name")
@@ -138,7 +138,7 @@ class BaseReader:
         Delete target_fname from self.targets.
         """
         for path2file in self.targets:
-            basename = os.path.basename(path2file)
+            basename = path2file.name
             if target_fname == basename:
                 self.targets.remove(path2file)
                 return

@@ -16,6 +16,7 @@ Git history reader for message-based translation monitoring
 import re
 import os
 
+from pathlib import Path
 from rumi.cache import Cache
 from datetime import datetime
 from rumi.base_reader import BaseReader
@@ -209,7 +210,7 @@ class MsgReader(BaseReader):
             for item in commit.diff(history[idx + 1], create_patch=True):
 
                 # Check if b_path (file name after this commit) is in targets
-                if item.b_path in self.targets:
+                if Path(item.b_path) in self.targets:
                     s = item.diff.decode("utf-8")
 
                     lines = s.split("\n")
@@ -232,7 +233,7 @@ class MsgReader(BaseReader):
                         commits = self.modify_commits(
                             commits,
                             timestamp,
-                            fname,
+                            Path(fname),
                             locale,
                             msgid,
                             content,
