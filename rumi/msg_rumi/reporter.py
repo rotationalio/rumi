@@ -14,8 +14,10 @@ Reporter for message-based translation monitoring
 
 
 import os
+import json
 import textwrap
 
+from pathlib import Path
 from tabulate import tabulate
 
 
@@ -185,7 +187,7 @@ class MsgReporter:
 
         return details
 
-    def print_stats(self, stats):
+    def print_stats(self, stats, dump_json=False, path="."):
         """
         Print out a summary of the translation status.
 
@@ -200,6 +202,10 @@ class MsgReporter:
                     "completed": int
                 }
             }
+        dump_json: bool
+            Whether to save the stats object to a json file. Default False.
+        path: string
+            Path to save the json file. Default to current path.
         """
         data = []
 
@@ -219,7 +225,45 @@ class MsgReporter:
             )
         )
 
-    def print_details(self, details):
+        if dump_json:
+            with open(Path(path) / "translation_stats.json", "w") as outfile:
+                json.dump(stats, outfile, indent=4)
+
+    def print_score(self, stats):
+        """
+        Print a total score of translation coverage.
+        Parameters
+        ----------
+        stats: dictionary
+            {
+                locale: {
+                    "total": int,
+                    "open": int,
+                    "updated": int,
+                    "completed": int
+                }
+            }
+        Returns
+        -------
+        score: float
+            Score of translation coverage averaging over each target file.
+        """
+        n_completed, n_total = 0, 0
+
+        for locale in stats:
+            stat = stats[locale]
+            # To exclude source files (the original content to be translated).
+            # Source files show 0 in "open", "updated", and "completed"
+            if not stat["open"] + stat["updated"] + stat["completed"] == 0:
+                n_completed += stat["completed"]
+                n_total += stat["total"]
+
+        score = round(n_completed / n_total *100, 1)
+
+        print("Translation coverage {}%".format(str(score)))
+        return score
+
+    def print_details(self, details, dump_json=False, path="."):
         """
         Print out the details of messages needing translations for each language
         and provide word count.
@@ -234,6 +278,10 @@ class MsgReporter:
                     "wc": int
                 }
             }
+        dump_json: bool
+            Whether to save the details object to a json file. Default False.
+        path: string
+            Path to save the json file. Default to current path.
         """
         for lang in details:
 
@@ -248,6 +296,10 @@ class MsgReporter:
                 print("\n".join(fmt_msgs))
 
         print("-" * 70)
+
+        if dump_json:
+            with open(Path(path) / "translation_details.json", "w") as outfile:
+                json.dump(details, outfile, indent=4)
 
     def download_needs(self, details, lang, path="."):
         """

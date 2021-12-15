@@ -378,7 +378,9 @@ class FileReader(BaseReader):
 
                 add = commit.stats.files[file]["insertions"]
                 delete = commit.stats.files[file]["deletions"]
-                n_lines = commit.stats.files[file]["lines"]
+                # Get total number of lines of files directly from the file
+                with open(self.repo_path / fname, "r+") as f:
+                    n_lines = len(f.readlines())
 
                 base_name, lang = self.parse_base_lang(fname)
 

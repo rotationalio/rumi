@@ -66,6 +66,20 @@ class TestMsgReporter:
 
         assert want_details == got_details
 
+    def test_print_score(self, capsys):
+        """
+        Assert translation coverage score is printed as expected.
+        """
+        reporter = MsgReporter()
+        stats = reporter.get_stats(self.commits, self.src_lang)
+
+        reporter.print_score(stats)
+
+        captured = capsys.readouterr()
+        want = "Translation coverage 25.0%\n"
+
+        assert captured.out == want
+
     def test_print_stats(self, capsys):
         """
         Assert reporter.stats() prints with no error.

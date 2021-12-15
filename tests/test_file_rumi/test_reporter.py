@@ -114,6 +114,23 @@ class TestFileReporter:
         ]
         assert got == want
 
+    def test_print_score(self, tmpdir, capsys):
+        """
+        Assert translation coverage score is printed as expected.
+        """
+        repo_path = self.generate_fixture(tmpdir)
+
+        reporter = FileReporter(repo_path=repo_path)
+
+        details = reporter.get_details(self.commits_status)
+        reporter.print_score(details)
+
+        captured = capsys.readouterr()
+
+        want = "Translation coverage 33.3%\n"
+
+        assert captured.out == want
+
     def test_print_details(self, tmpdir, capsys):
         """
         Assert reporter.detail() prints with no error.

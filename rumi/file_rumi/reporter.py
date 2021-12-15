@@ -13,10 +13,9 @@ Reporter for file-based translation monitoring
 ##########################################################################
 
 
+import json
 from pathlib import Path
 from tabulate import tabulate
-
-from rumi.file_rumi.reader import FileReader
 
 
 ##########################################################################
@@ -118,7 +117,7 @@ class FileReporter:
 
         return stats
 
-    def print_stats(self, stats):
+    def print_stats(self, stats, dump_json=False, path="."):
         """
         Print out a summary of the translation status.
         Parameters
@@ -132,6 +131,10 @@ class FileReporter:
                     "completed": int
                 }
             }
+        dump_json: bool
+            Whether to save the stats object to a json file. Default False.
+        path: string
+            Path to save the json file. Default to current path.
         """
         data = []
         for lang in stats:
@@ -147,6 +150,10 @@ class FileReporter:
                 tablefmt="orgtbl",
             )
         )
+
+        if dump_json:
+            with open(Path(path) / "translation_stats.json", "w") as outfile:
+                json.dump(stats, outfile, indent=4)
 
     def get_details(self, commits):
         """
@@ -204,18 +211,58 @@ class FileReporter:
                         "src_lang": src_lang,
                         "wc": str(wc),
                         "tgt_lang": lang,
-                        "pc": str(round(pc, 3) * 100) + "%",
-                        "pu": str(round(pu, 3) * 100) + "%",
+                        "pc": str(round(pc * 100, 1)) + "%",
+                        "pu": str(round(pu * 100, 1)) + "%",
                     }
                 )
 
         return details
 
-    def print_details(self, details):
+    def print_score(self, details):
+        """
+        Print a total score of translation coverage.
+        Parameters
+        ----------
+        details: list
+            [{
+                "basefile": name of the source file
+                "status": "open" or "updated",
+                "src_lang": source language,
+                "tgt_lang": target language,
+                "wc": word count,
+                "pc": percent change
+            }]
+        Returns
+        -------
+        score: float
+            Score of translation coverage averaging over each target file.
+        """
+        sum_scores = 0
+        for row in details:
+            pu = float(row["pu"].strip("%")) / 100
+            pc = float(row["pc"].strip("%")) / 100
+            # For "completed" and "updated", translation coverage is pc (percent
+            # completed) - pu (percent updated); for "open", translation coverage
+            # is zero.
+            if row["status"] in ["completed", "updated"]:
+                sum_scores += pc - pu
+
+        score =  round(sum_scores / len(details) * 100, 1)
+
+        print("Translation coverage {}%".format(str(score)))
+        return score
+
+    def print_details(self, details, dump_json=False, path="."):
         """
         Print out the details of the work required for translating each target
         file, its open/updated/completed status, source and target language, and 
         the count of words in the source file.
+        Parameters
+        ----------
+        dump_json: bool
+            Whether to save the details object to a json file. Default False.
+        path: string
+            Path to save the json file. Default to current path.
         """
         data = []
         for row in details:
@@ -250,6 +297,10 @@ class FileReporter:
                 tablefmt="orgtbl",
             )
         )
+
+        if dump_json:
+            with open(Path(path) / "translation_details.json", "w") as outfile:
+                json.dump(details, outfile, indent=4)
 
     def word_count(self, file):
         """
