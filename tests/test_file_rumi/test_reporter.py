@@ -14,6 +14,7 @@ Test the reporter for file-based translation monitoring
 
 
 import os
+import json
 import pytest
 
 from rumi.file_rumi.reporter import FileReporter
@@ -40,15 +41,19 @@ class TestFileReporter:
         }
         assert got == want
 
-    def test_print_stats(self, capsys):
+    def test_print_stats(self, tmpdir, capsys):
         """
         Assert reporter.stats() prints with no error.
         """
         reporter = FileReporter()
         stats = reporter.get_stats(self.commits_status)
-        reporter.print_stats(stats)
+        reporter.print_stats(stats, dump_path=tmpdir)
 
         captured = capsys.readouterr()
+        with open(tmpdir / "translation_stats.json", "r") as f:
+            got = json.load(f)
+
+        assert got == stats
 
         assert captured.out == self.stats_table
 
@@ -140,10 +145,13 @@ class TestFileReporter:
         reporter = FileReporter(repo_path=repo_path)
 
         details = reporter.get_details(self.commits_status)
-        reporter.print_details(details)
+        reporter.print_details(details, dump_path=tmpdir)
 
         captured = capsys.readouterr()
+        with open(tmpdir / "translation_details.json", "r") as f:
+            got = json.load(f)
 
+        assert got == details
         assert captured.out == self.details_table
 
     def test_word_count(self, tmpdir):

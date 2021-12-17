@@ -13,6 +13,7 @@ Test the reporter for message-based translation monitoring
 ##########################################################################
 
 
+import json
 import pytest
 
 from rumi.msg_rumi.reporter import MsgReporter
@@ -80,29 +81,37 @@ class TestMsgReporter:
 
         assert captured.out == want
 
-    def test_print_stats(self, capsys):
+    def test_print_stats(self, tmpdir, capsys):
         """
         Assert reporter.stats() prints with no error.
         """
 
         reporter = MsgReporter()
         stats = reporter.get_stats(self.commits, self.src_lang)
-        reporter.print_stats(stats)
+        reporter.print_stats(stats, dump_path=tmpdir)
 
         captured = capsys.readouterr()
+        with open(tmpdir / "translation_stats.json", "r") as f:
+            got = json.load(f)
+
+        assert got == stats
 
         assert captured.out == self.stats_table
 
-    def test_print_details(self, capsys):
+    def test_print_details(self, tmpdir, capsys):
         """
         Assert reporter.detail() prints with no error.
         """
 
         reporter = MsgReporter()
         details = reporter.get_details(self.commits, self.src_lang)
-        reporter.print_details(details)
+        reporter.print_details(details, dump_path=tmpdir)
 
         captured = capsys.readouterr()
+        with open(tmpdir / "translation_details.json", "r") as f:
+            got = json.load(f)
+
+        assert got == details
 
         assert captured.out == self.details_table
 

@@ -117,7 +117,7 @@ class FileReporter:
 
         return stats
 
-    def print_stats(self, stats, dump_json=False, path="."):
+    def print_stats(self, stats, dump_path=""):
         """
         Print out a summary of the translation status.
         Parameters
@@ -131,10 +131,8 @@ class FileReporter:
                     "completed": int
                 }
             }
-        dump_json: bool
-            Whether to save the stats object to a json file. Default False.
-        path: string
-            Path to save the json file. Default to current path.
+        dump_path: string
+            Path to save the json file. Default to "".
         """
         data = []
         for lang in stats:
@@ -151,8 +149,8 @@ class FileReporter:
             )
         )
 
-        if dump_json:
-            with open(Path(path) / "translation_stats.json", "w") as outfile:
+        if dump_path != "":
+            with open(Path(dump_path) / "translation_stats.json", "w+") as outfile:
                 json.dump(stats, outfile, indent=4)
 
     def get_details(self, commits):
@@ -230,7 +228,8 @@ class FileReporter:
                 "src_lang": source language,
                 "tgt_lang": target language,
                 "wc": word count,
-                "pc": percent change
+                "pc": percent complete
+                "pu": percent updated
             }]
         Returns
         -------
@@ -252,17 +251,15 @@ class FileReporter:
         print("Translation coverage {}%".format(str(score)))
         return score
 
-    def print_details(self, details, dump_json=False, path="."):
+    def print_details(self, details, dump_path=""):
         """
         Print out the details of the work required for translating each target
         file, its open/updated/completed status, source and target language, and 
         the count of words in the source file.
         Parameters
         ----------
-        dump_json: bool
-            Whether to save the details object to a json file. Default False.
-        path: string
-            Path to save the json file. Default to current path.
+        dump_path: string
+            Path to save the json file. Default to "".
         """
         data = []
         for row in details:
@@ -298,8 +295,8 @@ class FileReporter:
             )
         )
 
-        if dump_json:
-            with open(Path(path) / "translation_details.json", "w") as outfile:
+        if dump_path != "":
+            with open(Path(dump_path) / "translation_details.json", "w+") as outfile:
                 json.dump(details, outfile, indent=4)
 
     def word_count(self, file):

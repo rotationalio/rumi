@@ -187,7 +187,7 @@ class MsgReporter:
 
         return details
 
-    def print_stats(self, stats, dump_json=False, path="."):
+    def print_stats(self, stats, dump_path=""):
         """
         Print out a summary of the translation status.
 
@@ -202,10 +202,8 @@ class MsgReporter:
                     "completed": int
                 }
             }
-        dump_json: bool
-            Whether to save the stats object to a json file. Default False.
-        path: string
-            Path to save the json file. Default to current path.
+        dump_path: string
+            Path to save the json file. Default to "".
         """
         data = []
 
@@ -225,8 +223,8 @@ class MsgReporter:
             )
         )
 
-        if dump_json:
-            with open(Path(path) / "translation_stats.json", "w") as outfile:
+        if dump_path != "":
+            with open(Path(dump_path) / "translation_stats.json", "w+") as outfile:
                 json.dump(stats, outfile, indent=4)
 
     def print_score(self, stats):
@@ -263,7 +261,7 @@ class MsgReporter:
         print("Translation coverage {}%".format(str(score)))
         return score
 
-    def print_details(self, details, dump_json=False, path="."):
+    def print_details(self, details, dump_path=""):
         """
         Print out the details of messages needing translations for each language
         and provide word count.
@@ -278,10 +276,8 @@ class MsgReporter:
                     "wc": int
                 }
             }
-        dump_json: bool
-            Whether to save the details object to a json file. Default False.
-        path: string
-            Path to save the json file. Default to current path.
+        dump_path: string
+            Path to save the json file. Default to "".
         """
         for lang in details:
 
@@ -297,8 +293,8 @@ class MsgReporter:
 
         print("-" * 70)
 
-        if dump_json:
-            with open(Path(path) / "translation_details.json", "w") as outfile:
+        if dump_path != "":
+            with open(Path(dump_path) / "translation_details.json", "w+") as outfile:
                 json.dump(details, outfile, indent=4)
 
     def download_needs(self, details, lang, path="."):
