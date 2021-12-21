@@ -252,7 +252,7 @@ class MsgReporter:
             stat = stats[locale]
             # To exclude source files (the original content to be translated).
             # Source files show 0 in "open", "updated", and "completed"
-            if not stat["open"] + stat["updated"] + stat["completed"] == 0:
+            if stat["open"] + stat["updated"] + stat["completed"] != 0:
                 n_completed += stat["completed"]
                 n_total += stat["total"]
 
