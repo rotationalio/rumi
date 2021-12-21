@@ -27,11 +27,9 @@ from setuptools import find_packages
 
 
 ## Basic information
-with open("README.md", "r", encoding="utf-8") as fh:
-    LONG_DESCRIPTION = fh.read()
-
 NAME = "rumi-i18n"
 DESCRIPTION = "A static site translation monitoring tool"
+LONG_DESCRIPTION = "README.md"
 AUTHOR = "Tianshu Li"
 EMAIL = "tianshu@rotational.io"
 LICENSE = "Apache"
@@ -111,7 +109,7 @@ config = {
     "name": NAME,
     "version": get_version(),
     "description": DESCRIPTION,
-    "long_description": LONG_DESCRIPTION,
+    "long_description": read(LONG_DESCRIPTION),
     "long_description_content_type": "text/markdown",
     "license": LICENSE,
     "author": AUTHOR,
